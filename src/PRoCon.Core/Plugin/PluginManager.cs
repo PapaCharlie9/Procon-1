@@ -649,6 +649,8 @@ namespace PRoCon.Core.Plugin {
                     string fullPluginSource = File.ReadAllText(pluginFile.FullName);
 
                     parameters.OutputAssembly = outputAssembly;
+                    parameters.IncludeDebugInformation = true; //FIXME
+                    parameters.TempFiles = new TempFileCollection(Path.Combine(this.PluginBaseDirectory, "Temp"), true); //FIXME
 
                     fullPluginSource = this.PrecompileDirectives(fullPluginSource);
 
