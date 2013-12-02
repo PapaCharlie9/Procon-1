@@ -978,6 +978,7 @@ namespace PRoCon.Core.Plugin {
             ProconClient.Game.RoundStartPlayerCount -= new FrostbiteClient.LimitHandler(m_prcClient_RoundStartPlayerCount);
             ProconClient.Game.GameModeCounter -= new FrostbiteClient.LimitHandler(m_prcClient_GameModeCounter);
             ProconClient.Game.CtfRoundTimeModifier -= new FrostbiteClient.LimitHandler(m_prcClient_CtfRoundTimeModifier);
+            ProconClient.Game.RoundTimeLimit -= new FrostbiteClient.LimitHandler(m_prcClient_RoundTimeLimit);
 
             ProconClient.Game.TextChatModerationMode -= new FrostbiteClient.TextChatModerationModeHandler(Game_TextChatModerationMode);
             ProconClient.Game.TextChatSpamCoolDownTime -= new FrostbiteClient.LimitHandler(Game_TextChatSpamCoolDownTime);
@@ -1035,6 +1036,7 @@ namespace PRoCon.Core.Plugin {
             // R13
             ProconClient.Game.ServerName -= new FrostbiteClient.ServerNameHandler(m_prcClient_ServerName);
             ProconClient.Game.TeamKillCountForKick -= new FrostbiteClient.LimitHandler(m_prcClient_TeamKillCountForKick);
+            ProconClient.Game.TeamKillKickForBan -= new FrostbiteClient.LimitHandler(m_prcClient_TeamKillKickForBan);
             ProconClient.Game.TeamKillValueIncrease -= new FrostbiteClient.LimitHandler(m_prcClient_TeamKillValueIncrease);
             ProconClient.Game.TeamKillValueDecreasePerSecond -= new FrostbiteClient.LimitHandler(m_prcClient_TeamKillValueDecreasePerSecond);
             ProconClient.Game.TeamKillValueForKick -= new FrostbiteClient.LimitHandler(m_prcClient_TeamKillValueForKick);
@@ -1219,6 +1221,7 @@ namespace PRoCon.Core.Plugin {
             ProconClient.Game.RoundStartPlayerCount += new FrostbiteClient.LimitHandler(m_prcClient_RoundStartPlayerCount);
             ProconClient.Game.GameModeCounter += new FrostbiteClient.LimitHandler(m_prcClient_GameModeCounter);
             ProconClient.Game.CtfRoundTimeModifier += new FrostbiteClient.LimitHandler(m_prcClient_CtfRoundTimeModifier);
+            ProconClient.Game.RoundTimeLimit += new FrostbiteClient.LimitHandler(m_prcClient_RoundTimeLimit);
 
             ProconClient.Game.TextChatModerationMode += new FrostbiteClient.TextChatModerationModeHandler(Game_TextChatModerationMode);
             ProconClient.Game.TextChatSpamCoolDownTime += new FrostbiteClient.LimitHandler(Game_TextChatSpamCoolDownTime);
@@ -1276,6 +1279,7 @@ namespace PRoCon.Core.Plugin {
             // R13
             ProconClient.Game.ServerName += new FrostbiteClient.ServerNameHandler(m_prcClient_ServerName);
             ProconClient.Game.TeamKillCountForKick += new FrostbiteClient.LimitHandler(m_prcClient_TeamKillCountForKick);
+            ProconClient.Game.TeamKillKickForBan += new FrostbiteClient.LimitHandler(m_prcClient_TeamKillKickForBan);
             ProconClient.Game.TeamKillValueIncrease += new FrostbiteClient.LimitHandler(m_prcClient_TeamKillValueIncrease);
             ProconClient.Game.TeamKillValueDecreasePerSecond += new FrostbiteClient.LimitHandler(m_prcClient_TeamKillValueDecreasePerSecond);
             ProconClient.Game.TeamKillValueForKick += new FrostbiteClient.LimitHandler(m_prcClient_TeamKillValueForKick);
@@ -1949,6 +1953,10 @@ namespace PRoCon.Core.Plugin {
             InvokeOnAllEnabled("OnTeamKillValueForKick", new object[] {limit});
         }
 
+        private void m_prcClient_TeamKillKickForBan(FrostbiteClient sender, int limit) {
+            InvokeOnAllEnabled("OnTeamKillKickForBan", new object[] { limit });
+        }
+
         private void m_prcClient_TeamKillValueDecreasePerSecond(FrostbiteClient sender, int limit) {
             InvokeOnAllEnabled("OnTeamKillValueDecreasePerSecond", new object[] {limit});
         }
@@ -1970,7 +1978,12 @@ namespace PRoCon.Core.Plugin {
             InvokeOnAllEnabled("OnCtfRoundTimeModifier", new object[] {limit});
         }
 
-        private void m_prcClient_RoundRestartPlayerCount(FrostbiteClient sender, int limit) {
+        private void m_prcClient_RoundTimeLimit(FrostbiteClient sender, int limit) {
+            InvokeOnAllEnabled("OnRoundTimeLimit", new object[] { limit });
+        }
+
+        private void m_prcClient_RoundRestartPlayerCount(FrostbiteClient sender, int limit)
+        {
             InvokeOnAllEnabled("OnRoundRestartPlayerCount", new object[] {limit});
         }
 

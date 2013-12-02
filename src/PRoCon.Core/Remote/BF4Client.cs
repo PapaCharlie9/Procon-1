@@ -143,7 +143,7 @@ namespace PRoCon.Core.Remote {
             ResponseDelegates.Add("vars.roundStartPlayerCount", DispatchVarsRoundStartPlayerCountResponse);
             ResponseDelegates.Add("vars.playerRespawnTime", DispatchVarsPlayerRespawnTimeResponse);
             ResponseDelegates.Add("vars.gameModeCounter", DispatchVarsGameModeCounterResponse);
-            ResponseDelegates.Add("vars.ctfRoundTimeModifier", DispatchVarsCtfRoundTimeModifierResponse);
+            ResponseDelegates.Add("vars.roundTimeLimit", DispatchVarsRoundTimeLimitResponse);
             ResponseDelegates.Add("vars.idleBanRounds", DispatchVarsIdleBanRoundsResponse);
 
             ResponseDelegates.Add("vars.serverMessage", DispatchVarsServerMessageResponse);
@@ -158,6 +158,8 @@ namespace PRoCon.Core.Remote {
             ResponseDelegates.Add("fairFight.isActive", DispatchVarsFairFightStatusResponse);
 
             ResponseDelegates.Add("vars.maxSpectators", DispatchVarsMaxSpectatorsResponse);
+
+            ResponseDelegates.Add("vars.teamKillKickForBan", DispatchVarsTeamKillKickForBanResponse);
 
 
             #endregion
@@ -202,6 +204,8 @@ namespace PRoCon.Core.Remote {
         public override void FetchStartupVariables() {
             base.FetchStartupVariables();
 
+            SendGetVarsTeamKillKickForBanPacket();
+
             SendGetVarsPlayerLimitPacket();
 
             SendGetVarsIdleBanRoundsPacket();
@@ -221,7 +225,6 @@ namespace PRoCon.Core.Remote {
             SendGetVarsOnlySquadLeaderSpawnPacket();
 
             SendGetVarsUnlockModePacket();
-            SendGetVarsPresetPacket();
 
             SendGetVarsSoldierHealthPacket();
 
@@ -253,6 +256,9 @@ namespace PRoCon.Core.Remote {
             SendGetVarsCommander();
             SendGetVarsAlwaysAllowSpectators();
             SendGetVarsForceReloadWholeMags();
+            SendGetVarsRoundTimeLimitPacket();
+
+            SendGetVarsPresetPacket();
         }
 
         #region Overridden Events
@@ -341,7 +347,7 @@ namespace PRoCon.Core.Remote {
         public override event LimitHandler PlayerRespawnTime;
 
         public override event LimitHandler GameModeCounter;
-        public override event LimitHandler CtfRoundTimeModifier;
+        public override event LimitHandler RoundTimeLimit;
         public override event LimitHandler IdleBanRounds;
 
         public override event ServerMessageHandler ServerMessage;
@@ -530,7 +536,7 @@ namespace PRoCon.Core.Remote {
             }
         }
 
-        public virtual void SendGetVarsPunkBusterPacket() {
+        public override void SendGetVarsPunkBusterPacket() {
             if (IsLoggedIn == true) {
                 BuildSendPacket("punkBuster.isActive");
             }
@@ -1197,14 +1203,14 @@ namespace PRoCon.Core.Remote {
             }
         }
 
-        protected virtual void DispatchVarsCtfRoundTimeModifierResponse(FrostbiteConnection sender, Packet cpRecievedPacket, Packet cpRequestPacket) {
+        protected virtual void DispatchVarsRoundTimeLimitResponse(FrostbiteConnection sender, Packet cpRecievedPacket, Packet cpRequestPacket) {
             if (cpRequestPacket.Words.Count >= 1) {
-                if (CtfRoundTimeModifier != null) {
+                if (RoundTimeLimit != null) {
                     if (cpRecievedPacket.Words.Count == 2) {
-                        FrostbiteConnection.RaiseEvent(CtfRoundTimeModifier.GetInvocationList(), this, Convert.ToInt32(cpRecievedPacket.Words[1]));
+                        FrostbiteConnection.RaiseEvent(RoundTimeLimit.GetInvocationList(), this, Convert.ToInt32(cpRecievedPacket.Words[1]));
                     }
                     else if (cpRequestPacket.Words.Count >= 2) {
-                        FrostbiteConnection.RaiseEvent(CtfRoundTimeModifier.GetInvocationList(), this, Convert.ToInt32(cpRequestPacket.Words[1]));
+                        FrostbiteConnection.RaiseEvent(RoundTimeLimit.GetInvocationList(), this, Convert.ToInt32(cpRequestPacket.Words[1]));
                     }
                 }
             }

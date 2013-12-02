@@ -652,7 +652,7 @@ namespace PRoCon.Forms {
             this.picHttpServerForwardedTestStatus.Image = this.m_frmParent.picPortCheckerUnknown.Image;
             this.lnkHttpServerExampleLink.Visible = false;
 
-            this.pnlHttpServerTester.Visible = true;
+            this.pnlHttpServerTester.Visible = false; // service not provided at the moment
 
             this.lnkStartStopHttpServer.Text = this.m_praApplication.CurrentLanguage.GetLocalized("frmOptions.lnkStartStopHttpServer.Stop");
             this.lblHttpServerServerStatus.Text = this.m_praApplication.CurrentLanguage.GetLocalized("frmOptions.lblHttpServerServerStatus.Online", sender.ListeningPort.ToString());
@@ -828,6 +828,7 @@ namespace PRoCon.Forms {
 
         private void btnAddStatsLink_Click(object sender, EventArgs e)
         {
+            this.txtStatsLinkName.Text = this.txtStatsLinkName.Text.Replace(" ", "_");
             this.m_praApplication.OptionsSettings.StatsLinkNameUrl.Add(new StatsLinkNameUrl(this.txtStatsLinkName.Text, this.txtStatsLinkUrl.Text));
         }
 

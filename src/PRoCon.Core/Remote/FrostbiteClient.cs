@@ -853,6 +853,18 @@ namespace PRoCon.Core.Remote {
             }
         }
 
+        public virtual void SendSetVarsTeamKillKickForBanPacket(int limit) {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.teamKillKickForBan", limit.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        public virtual void SendGetVarsTeamKillKickForBanPacket() {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.teamKillKickForBan");
+            }
+        }
+
         public virtual void SendSetVarsTeamKillValueForKickPacket(int limit) {
             if (IsLoggedIn == true) {
                 BuildSendPacket("vars.teamKillValueForKick", limit.ToString(CultureInfo.InvariantCulture));
@@ -1462,6 +1474,19 @@ namespace PRoCon.Core.Remote {
         public virtual void SendGetVarsCtfRoundTimeModifierPacket() {
             if (IsLoggedIn == true) {
                 BuildSendPacket("vars.ctfRoundTimeModifier");
+            }
+        }
+
+
+        public virtual void SendSetVarsRoundTimeLimitPacket(int limit)         {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.roundTimeLimit", limit.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        public virtual void SendGetVarsRoundTimeLimitPacket() {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.roundTimeLimit");
             }
         }
 
@@ -2987,7 +3012,20 @@ namespace PRoCon.Core.Remote {
             }
         }
 
-        protected virtual void DispatchVarsTeamKillValueForKickResponse(FrostbiteConnection sender, Packet cpRecievedPacket, Packet cpRequestPacket) {
+        protected virtual void DispatchVarsTeamKillKickForBanResponse(FrostbiteConnection sender, Packet cpRecievedPacket, Packet cpRequestPacket) {
+            if (cpRequestPacket.Words.Count >= 1) {
+                if (TeamKillKickForBan != null) {
+                    if (cpRecievedPacket.Words.Count == 2) {
+                        FrostbiteConnection.RaiseEvent(TeamKillKickForBan.GetInvocationList(), this, (int)Convert.ToDecimal(cpRecievedPacket.Words[1]));
+                    } else if (cpRequestPacket.Words.Count >= 2) {
+                        FrostbiteConnection.RaiseEvent(TeamKillKickForBan.GetInvocationList(), this, (int)Convert.ToDecimal(cpRequestPacket.Words[1]));
+                    }
+                }
+            }
+        }
+
+        protected virtual void DispatchVarsTeamKillValueForKickResponse(FrostbiteConnection sender, Packet cpRecievedPacket, Packet cpRequestPacket)
+        {
             if (cpRequestPacket.Words.Count >= 1) {
                 if (TeamKillValueForKick != null) {
                     if (cpRecievedPacket.Words.Count == 2) {
@@ -3741,7 +3779,6 @@ namespace PRoCon.Core.Remote {
         public virtual event LimitHandler GameModeCounter;
         public virtual event LimitHandler CtfRoundTimeModifier;
         public virtual event UnlockModeHandler UnlockMode;
-        public virtual event BF4presetHandler BF4preset;
         public virtual event GunMasterWeaponsPresetHandler GunMasterWeaponsPreset;
         public virtual event IsEnabledHandler ReservedSlotsListAggressiveJoin;
         public virtual event LimitHandler RoundLockdownCountdown;
@@ -3766,18 +3803,14 @@ namespace PRoCon.Core.Remote {
         #region BF4
 
         public virtual event IsEnabledHandler FairFight;
-
         public virtual event LimitHandler MaxSpectators;
-
         public virtual event IsEnabledHandler IsHitIndicator;
-
         public virtual event IsEnabledHandler IsCommander;
-
         public virtual event IsEnabledHandler IsForceReloadWholeMags;
-
         public virtual event IsEnabledHandler AlwaysAllowSpectators;
-
         public virtual event VarsStringHandler ServerType;
+        public virtual event LimitHandler RoundTimeLimit;
+        public virtual event BF4presetHandler BF4preset;
 
         #endregion
 
@@ -3814,6 +3847,7 @@ namespace PRoCon.Core.Remote {
         #region Team Killing
 
         public virtual event LimitHandler TeamKillCountForKick;
+        public virtual event LimitHandler TeamKillKickForBan;
         public virtual event LimitHandler TeamKillValueForKick;
         public virtual event LimitHandler TeamKillValueIncrease;
         public virtual event LimitHandler TeamKillValueDecreasePerSecond;

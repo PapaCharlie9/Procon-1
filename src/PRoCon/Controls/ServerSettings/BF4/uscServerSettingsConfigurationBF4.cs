@@ -49,8 +49,8 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
 
             this.AsyncSettingControls.Add("vars.maxSpectators", new AsyncStyleSetting(this.picSettingsMaxSpectators, this.numSettingsMaxSpectators, new Control[] { this.numSettingsMaxSpectators, this.lnkSettingsSetMaxSpectators }, true));
 
-            this.AsyncSettingControls.Add("vars.idletimeout 0", new AsyncStyleSetting(this.picSettingsIdleKickLimit, this.chkSettingsNoIdleKickLimit, new Control[] { this.chkSettingsNoIdleKickLimit }, true));
-            this.AsyncSettingControls.Add("vars.idletimeout", new AsyncStyleSetting(this.picSettingsIdleKickLimit, this.numSettingsIdleKickLimit, new Control[] { this.numSettingsIdleKickLimit, this.lnkSettingsSetidleKickLimit }, true));
+            this.AsyncSettingControls.Add("vars.idletimeout 86400", new AsyncStyleSetting(this.picSettingsIdleKickLimit, this.chkSettingsNoIdleKickLimit, new Control[] { this.chkSettingsNoIdleKickLimit }, false));
+            this.AsyncSettingControls.Add("vars.idletimeout", new AsyncStyleSetting(this.picSettingsIdleKickLimit, this.numSettingsIdleKickLimit, new Control[] { this.numSettingsIdleKickLimit, this.lnkSettingsSetidleKickLimit }, false));
 
             this.AsyncSettingControls.Add("vars.idlebanrounds 0", new AsyncStyleSetting(this.picSettingsNoIdleBanRoundsLimit, this.chkSettingsNoIdleBanRoundsLimit, new Control[] { this.chkSettingsNoIdleBanRoundsLimit }, true));
             this.AsyncSettingControls.Add("vars.idlebanrounds", new AsyncStyleSetting(this.picSettingsNoIdleBanRoundsLimit, this.numSettingsIdleBanRoundsLimit, new Control[] { this.numSettingsIdleBanRoundsLimit, this.lnkSettingsSetIdleBanRoundsLimit }, true));
@@ -60,7 +60,7 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
 
             this.AsyncSettingControls.Add("fairFight.isActive", new AsyncStyleSetting(this.picSettingsFairFight, this.chkSettingsFairFight, new Control[] { this.chkSettingsFairFight }, true));
 
-            this.AsyncSettingControls.Add("vars.commander", new AsyncStyleSetting(this.picSettingsCommander, this.chkSettingsCommander, new Control[] { this.chkSettingsCommander }, true));
+            this.AsyncSettingControls.Add("vars.commander", new AsyncStyleSetting(this.picSettingsCommander, this.chkSettingsCommander, new Control[] { this.chkSettingsCommander }, false));
             this.AsyncSettingControls.Add("vars.alwaysAllowSpectators", new AsyncStyleSetting(this.picSettingsAlwaysAllowSpectators, this.chkSettingsAlwaysAllowSpectators, new Control[] { this.chkSettingsAlwaysAllowSpectators }, true));
             
             this.AsyncSettingControls.Add("reservedslotslist.aggressivejoin", new AsyncStyleSetting(this.picSettingsAggressiveJoin, this.chkSettingsAggressiveJoin, new Control[] { this.chkSettingsAggressiveJoin }, true));
@@ -142,6 +142,8 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
             this.Client.Game.ReservedSlotsListAggressiveJoin += new FrostbiteClient.IsEnabledHandler(Game_ReservedSlotsAggressiveJoin);
 
             this.Client.Game.ServerInfo += new FrostbiteClient.ServerInfoHandler(m_prcClient_ServerInfo);
+
+            this.Client.Game.BF4preset += new FrostbiteClient.BF4presetHandler(Tab_BF4preset);
         }
 
         private void m_prcClient_ServerInfo(FrostbiteClient sender, CServerInfo csiServerInfo) {
@@ -152,6 +154,13 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
 
             this.chkSettingsPunkbuster.Checked = csiServerInfo.PunkBuster;
             //this.chkSettingsRanked.Checked = csiServerInfo.Ranked;
+        }
+
+        private void Tab_BF4preset(FrostbiteClient sender, string mode, bool locked) {
+            this.numSettingsIdleKickLimit.Enabled = !locked;
+            this.lnkSettingsSetidleKickLimit.Enabled = !locked;
+            this.chkSettingsNoIdleKickLimit.Enabled = !locked;
+            this.chkSettingsCommander.Enabled = !locked;
         }
 
         #region Server Type
@@ -295,27 +304,32 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
         private void m_prcClient_IdleTimeout(FrostbiteClient sender, int limit) {
             this.m_iPreviousSuccessIdleTimeoutLimit = limit;
 
-            if (this.m_iPreviousSuccessIdleTimeoutLimit == 0) {
-                this.OnSettingResponse("vars.idletimeout 0", true, true);
+            if (this.m_iPreviousSuccessIdleTimeoutLimit == 0 || this.m_iPreviousSuccessIdleTimeoutLimit == 86400) {
+                this.OnSettingResponse("vars.idletimeout 86400", true, true);
             }
             else {
                 this.OnSettingResponse("vars.idletimeout", (decimal)this.m_iPreviousSuccessIdleTimeoutLimit, true);
-                this.OnSettingResponse("vars.idletimeout 0", false, true);
+                this.OnSettingResponse("vars.idletimeout 86400", false, true);
             }
         }
 
         private void chkSettingsNoIdleKickLimit_CheckedChanged(object sender, EventArgs e) {
             this.pnlSettingsSetidleKickLimit.Enabled = !this.chkSettingsNoIdleKickLimit.Checked;
-            this.pnlSettingsSetidleKickLimit.Visible = !this.chkSettingsNoIdleKickLimit.Checked;
+            // for BF4 86400s are max and this is not disabled, so it has to be visulized in a propper way
+            if (this.chkSettingsNoIdleKickLimit.Checked == true) {
+                this.numSettingsIdleKickLimit.Value = 86400;
+            }
+            //this.pnlSettingsSetidleKickLimit.Visible = !this.chkSettingsNoIdleKickLimit.Checked;
 
             this.chkSettingsNoIdleBanRoundsLimit.Enabled = !this.chkSettingsNoIdleKickLimit.Checked; 
             this.chkSettingsNoIdleBanRoundsLimit.Visible = !this.chkSettingsNoIdleKickLimit.Checked;
 
-            if (this.IgnoreEvents == false && this.AsyncSettingControls["vars.idletimeout 0"].IgnoreEvent == false) {
+            if (this.IgnoreEvents == false && this.AsyncSettingControls["vars.idletimeout 86400"].IgnoreEvent == false)
+            {
                 if (this.chkSettingsNoIdleKickLimit.Checked == true) {
-                    this.WaitForSettingResponse("vars.idletimeout 0", !this.chkSettingsNoIdleKickLimit.Checked);
+                    this.WaitForSettingResponse("vars.idletimeout 86400", !this.chkSettingsNoIdleKickLimit.Checked);
 
-                    this.Client.Game.SendSetVarsIdleTimeoutPacket(0);
+                    this.Client.Game.SendSetVarsIdleTimeoutPacket(86400);
                     //this.SendCommand("vars.idleTimeout", "0");
                 }
                 if (this.chkSettingsNoIdleKickLimit.Checked == false)
