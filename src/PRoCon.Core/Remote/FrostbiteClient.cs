@@ -1490,6 +1490,18 @@ namespace PRoCon.Core.Remote {
             }
         }
 
+        public virtual void SendSetVarsTicketBleedRatePacket(int limit) {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.ticketBleedRate", limit.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        public virtual void SendGetVarsTicketBleedRatePacket() {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.ticketBleedRate");
+            }
+        }
+
         public virtual void SendSetReservedSlotsListAggressiveJoinPacket(bool enabled) {
             if (IsLoggedIn == true) {
                 BuildSendPacket("reservedSlotsList.aggressiveJoin", Packet.Bltos(enabled));
@@ -1632,6 +1644,55 @@ namespace PRoCon.Core.Remote {
                 BuildSendPacket("vars.forceReloadWholeMags");
             }
         }
+
+        public virtual void SendSetVarsTeam1FactionOverridePacket(int faction) {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.team1FactionOverride", faction.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        public virtual void SendSetVarsTeam2FactionOverridePacket(int faction) {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.team2FactionOverride", faction.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        public virtual void SendSetVarsTeam3FactionOverridePacket(int faction) {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.team3FactionOverride", faction.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        public virtual void SendSetVarsTeam4FactionOverridePacket(int faction) {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.team4FactionOverride", faction.ToString(CultureInfo.InvariantCulture));
+            }
+        }
+
+        public virtual void SendGetVarsTeam1FactionOverridePacket() {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.team1FactionOverride");
+            }
+        }
+
+        public virtual void SendGetVarsTeam2FactionOverridePacket() {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.team2FactionOverride");
+            }
+        }
+
+        public virtual void SendGetVarsTeam3FactionOverridePacket() {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.team3FactionOverride");
+            }
+        }
+
+        public virtual void SendGetVarsTeam4FactionOverridePacket() {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.team4FactionOverride");
+            }
+        }
+
 
         #endregion
 
@@ -3810,7 +3871,13 @@ namespace PRoCon.Core.Remote {
         public virtual event IsEnabledHandler AlwaysAllowSpectators;
         public virtual event VarsStringHandler ServerType;
         public virtual event LimitHandler RoundTimeLimit;
+        public virtual event LimitHandler TicketBleedRate;
         public virtual event BF4presetHandler BF4preset;
+
+        public virtual event LimitHandler Team1FactionOverride;
+        public virtual event LimitHandler Team2FactionOverride;
+        public virtual event LimitHandler Team3FactionOverride;
+        public virtual event LimitHandler Team4FactionOverride;
 
         #endregion
 

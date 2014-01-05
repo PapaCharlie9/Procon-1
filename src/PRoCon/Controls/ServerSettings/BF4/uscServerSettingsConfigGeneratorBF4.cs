@@ -78,6 +78,7 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
             this.Client.Game.PlayerRespawnTime += new FrostbiteClient.LimitHandler(Game_PlayerRespawnTime);
             this.Client.Game.GameModeCounter += new FrostbiteClient.LimitHandler(Game_GameModeCounter);
             this.Client.Game.RoundTimeLimit +=new FrostbiteClient.LimitHandler(Game_RoundTimeLimit);
+            this.Client.Game.TicketBleedRate += new FrostbiteClient.LimitHandler(Game_TicketBleedRate);
             this.Client.Game.IdleTimeout += new FrostbiteClient.LimitHandler(Client_IdleTimeout);
             this.Client.Game.IdleBanRounds += new FrostbiteClient.LimitHandler(Game_IdleBanRounds);
             this.Client.Game.ServerMessage += new FrostbiteClient.ServerMessageHandler(Game_ServerMessage);
@@ -92,6 +93,10 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
             this.Client.Game.RoundLockdownCountdown += new FrostbiteClient.LimitHandler(Game_RoundLockdownCountdown);
             this.Client.Game.RoundWarmupTimeout += new FrostbiteClient.LimitHandler(Game_RoundWarmupTimeout);
 
+            this.Client.Game.Team1FactionOverride += new FrostbiteClient.LimitHandler(Game_Team1FactionOverride);
+            this.Client.Game.Team2FactionOverride += new FrostbiteClient.LimitHandler(Game_Team2FactionOverride);
+            this.Client.Game.Team3FactionOverride += new FrostbiteClient.LimitHandler(Game_Team3FactionOverride);
+            this.Client.Game.Team4FactionOverride += new FrostbiteClient.LimitHandler(Game_Team4FactionOverride);
             // not used in BF4 //this.Client.Game.PremiumStatus += new FrostbiteClient.IsEnabledHandler(Game_PremiumStatus);
             
         }
@@ -208,10 +213,16 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
 
         void Game_RoundTimeLimit(FrostbiteClient sender, int limit)
         {
-            this.AppendSetting("vars.RoundTimeLimit", limit.ToString());
+            this.AppendSetting("vars.roundTimeLimit", limit.ToString());
         }
 
-        protected override void Client_PlayerLimit(FrostbiteClient sender, int limit) {
+        void Game_TicketBleedRate(FrostbiteClient sender, int limit)
+        {
+            this.AppendSetting("vars.ticketBleedRate", limit.ToString());
+        }
+
+        protected override void Client_PlayerLimit(FrostbiteClient sender, int limit)
+        {
             this.AppendSetting("vars.maxPlayers", limit.ToString());
         }
 
@@ -280,5 +291,20 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
             }
         }
 
+        void Game_Team1FactionOverride(FrostbiteClient sender, int faction) {
+            this.AppendSetting("vars.team1FactionOverride", faction.ToString());
+        }
+
+        void Game_Team2FactionOverride(FrostbiteClient sender, int faction) {
+            this.AppendSetting("vars.team2FactionOverride", faction.ToString());
+        }
+
+        void Game_Team3FactionOverride(FrostbiteClient sender, int faction) {
+            this.AppendSetting("vars.team3FactionOverride", faction.ToString());
+        }
+
+        void Game_Team4FactionOverride(FrostbiteClient sender, int faction) {
+            this.AppendSetting("vars.team4FactionOverride", faction.ToString());
+        }
     }
 }

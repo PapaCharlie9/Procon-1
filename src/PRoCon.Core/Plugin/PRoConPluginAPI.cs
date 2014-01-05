@@ -240,6 +240,7 @@ namespace PRoCon.Core.Plugin {
         public virtual void OnGameModeCounter(int limit) { }
         public virtual void OnCtfRoundTimeModifier(int limit) { }
         public virtual void OnRoundTimeLimit(int limit) { }
+        public virtual void OnTicketBleedRate(int limit) { }
         public virtual void OnRoundLockdownCountdown(int limit) { }
         public virtual void OnRoundWarmupTimeout(int limit) { }
         public virtual void OnPremiumStatus(bool isEnabled) { }
@@ -255,6 +256,11 @@ namespace PRoCon.Core.Plugin {
         public virtual void OnPlayerRespawnTime(int limit) { }
         public virtual void OnHud(bool isEnabled) { }
         public virtual void OnNameTag(bool isEnabled) { }
+
+        public virtual void OnTeam1FactionOverride(int faction) { }
+        public virtual void OnTeam2FactionOverride(int faction) { }
+        public virtual void OnTeam3FactionOverride(int faction) { }
+        public virtual void OnTeam4FactionOverride(int faction) { }
 
 
         #region MoHW

@@ -979,6 +979,7 @@ namespace PRoCon.Core.Plugin {
             ProconClient.Game.GameModeCounter -= new FrostbiteClient.LimitHandler(m_prcClient_GameModeCounter);
             ProconClient.Game.CtfRoundTimeModifier -= new FrostbiteClient.LimitHandler(m_prcClient_CtfRoundTimeModifier);
             ProconClient.Game.RoundTimeLimit -= new FrostbiteClient.LimitHandler(m_prcClient_RoundTimeLimit);
+            ProconClient.Game.TicketBleedRate -= new FrostbiteClient.LimitHandler(m_prcClient_TicketBleedRate);
 
             ProconClient.Game.TextChatModerationMode -= new FrostbiteClient.TextChatModerationModeHandler(Game_TextChatModerationMode);
             ProconClient.Game.TextChatSpamCoolDownTime -= new FrostbiteClient.LimitHandler(Game_TextChatSpamCoolDownTime);
@@ -1013,6 +1014,11 @@ namespace PRoCon.Core.Plugin {
             ProconClient.Game.SquadListActive -= new FrostbiteClient.SquadListActiveHandler(Game_SquadListActive);
             ProconClient.Game.SquadListPlayers -= new FrostbiteClient.SquadListPlayersHandler(Game_SquadListPlayers);
             ProconClient.Game.SquadIsPrivate -= new FrostbiteClient.SquadIsPrivateHandler(Game_SquadIsPrivate);
+
+            ProconClient.Game.Team1FactionOverride -= new FrostbiteClient.LimitHandler(Game_Team1FactionOverride);
+            ProconClient.Game.Team2FactionOverride -= new FrostbiteClient.LimitHandler(Game_Team2FactionOverride);
+            ProconClient.Game.Team3FactionOverride -= new FrostbiteClient.LimitHandler(Game_Team3FactionOverride);
+            ProconClient.Game.Team4FactionOverride -= new FrostbiteClient.LimitHandler(Game_Team4FactionOverride);
 
             #region MoHW
 
@@ -1222,6 +1228,7 @@ namespace PRoCon.Core.Plugin {
             ProconClient.Game.GameModeCounter += new FrostbiteClient.LimitHandler(m_prcClient_GameModeCounter);
             ProconClient.Game.CtfRoundTimeModifier += new FrostbiteClient.LimitHandler(m_prcClient_CtfRoundTimeModifier);
             ProconClient.Game.RoundTimeLimit += new FrostbiteClient.LimitHandler(m_prcClient_RoundTimeLimit);
+            ProconClient.Game.TicketBleedRate += new FrostbiteClient.LimitHandler(m_prcClient_TicketBleedRate);
 
             ProconClient.Game.TextChatModerationMode += new FrostbiteClient.TextChatModerationModeHandler(Game_TextChatModerationMode);
             ProconClient.Game.TextChatSpamCoolDownTime += new FrostbiteClient.LimitHandler(Game_TextChatSpamCoolDownTime);
@@ -1982,6 +1989,10 @@ namespace PRoCon.Core.Plugin {
             InvokeOnAllEnabled("OnRoundTimeLimit", new object[] { limit });
         }
 
+        private void m_prcClient_TicketBleedRate(FrostbiteClient sender, int limit) {
+            InvokeOnAllEnabled("OnTicketBleedRate", new object[] { limit });
+        }
+
         private void m_prcClient_RoundRestartPlayerCount(FrostbiteClient sender, int limit)
         {
             InvokeOnAllEnabled("OnRoundRestartPlayerCount", new object[] {limit});
@@ -1998,8 +2009,28 @@ namespace PRoCon.Core.Plugin {
         private void m_prcClient_BF4preset(FrostbiteClient sender, string mode, bool isLocked) {
             InvokeOnAllEnabled("OnPreset", new object[] { mode, isLocked });
         }
-        
-        private void Game_GunMasterWeaponsPreset(FrostbiteClient sender, int preset) {
+
+        private void Game_Team1FactionOverride(FrostbiteClient sender, int faction) {
+            InvokeOnAllEnabled("OnTeam1FactionOverride", new object[] { faction });
+        }
+
+        private void Game_Team2FactionOverride(FrostbiteClient sender, int faction)
+        {
+            InvokeOnAllEnabled("OnTeam2FactionOverride", new object[] { faction });
+        }
+
+        private void Game_Team3FactionOverride(FrostbiteClient sender, int faction)
+        {
+            InvokeOnAllEnabled("OnTeam3FactionOverride", new object[] { faction });
+        }
+
+        private void Game_Team4FactionOverride(FrostbiteClient sender, int faction)
+        {
+            InvokeOnAllEnabled("OnTeam4FactionOverride", new object[] { faction });
+        }
+
+        private void Game_GunMasterWeaponsPreset(FrostbiteClient sender, int preset)
+        {
             InvokeOnAllEnabled("OnGunMasterWeaponsPreset", new object[] {preset});
         }
 

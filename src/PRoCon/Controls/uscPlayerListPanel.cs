@@ -334,6 +334,7 @@ namespace PRoCon {
             this.colScore1.Text = this.colScore2.Text = this.colScore3.Text = this.colScore4.Text = this.m_clocLanguage.GetLocalized("uscPlayerListPanel.lsvPlayers.colScore", null);
             this.colPing1.Text = this.colPing2.Text = this.colPing3.Text = this.colPing4.Text = this.m_clocLanguage.GetLocalized("uscPlayerListPanel.lsvPlayers.colPing", null);
             this.colRank1.Tag = this.colRank2.Text = this.colRank3.Text = this.colRank4.Text = this.m_clocLanguage.GetDefaultLocalized("Rank", "uscPlayerListPanel.lsvPlayers.colRank", null);
+            this.colType1.Tag = this.colType2.Text = this.colType3.Text = this.colType4.Text = this.m_clocLanguage.GetDefaultLocalized("Type", "uscPlayerListPanel.lsvPlayers.colType", null);
             
             this.btnPlayerListSelectedCheese.Text = this.m_clocLanguage.GetLocalized("uscPlayerListPanel.btnPlayerListSelectedCheese", null);
 
@@ -480,6 +481,25 @@ namespace PRoCon {
             lviRank.Text = cpiPlayer.Rank.ToString();
             lviNewPlayer.SubItems.Add(lviRank);
 
+            ListViewItem.ListViewSubItem lviType = new ListViewItem.ListViewSubItem();
+            lviType.Name = "type";
+
+            if (cpiPlayer.Type == 0) {
+                //lviType.Text = this.m_clocLanguage.GetDefaultLocalized("Player", "uscPlayerListPanel.lsvPlayers.Type.Player", null);
+                lviType.Text = String.Empty;
+            }
+            else if (cpiPlayer.Type == 1) {
+                lviType.Text = this.m_clocLanguage.GetDefaultLocalized("Spectator", "uscPlayerListPanel.lsvPlayers.Type.Spectator", null);
+            }
+            else if (cpiPlayer.Type == 2) {
+                lviType.Text = this.m_clocLanguage.GetDefaultLocalized("Commander (PC)", "uscPlayerListPanel.lsvPlayers.Type.CommanderPC", null);
+            }
+            else if (cpiPlayer.Type == 3) {
+                lviType.Text = this.m_clocLanguage.GetDefaultLocalized("Commander (Tablet)", "uscPlayerListPanel.lsvPlayers.Type.CommanderTablet", null);
+            }
+            
+            lviNewPlayer.SubItems.Add(lviType);
+
             return lviNewPlayer;
         }
 
@@ -581,6 +601,7 @@ namespace PRoCon {
                 ((AdditionalPlayerInfo)this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].Tag).m_cpiPlayer.Score = 0;
                 ((AdditionalPlayerInfo)this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].Tag).m_cpiPlayer.Ping = 0;
                 ((AdditionalPlayerInfo)this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].Tag).m_cpiPlayer.Rank = 0;
+                ((AdditionalPlayerInfo)this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].Tag).m_cpiPlayer.Type = 0;
                 ((AdditionalPlayerInfo)this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].Tag).m_cpiPlayer.SquadID = 0;
                 ((AdditionalPlayerInfo)this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].Tag).m_cpiPlayer.Kdr = 0.0F;
 
@@ -590,6 +611,7 @@ namespace PRoCon {
                 this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].SubItems["score"].Text = "0";
                 this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].SubItems["ping"].Text = String.Empty;
                 this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].SubItems["rank"].Text = String.Empty;
+                this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].SubItems["type"].Text = String.Empty;
                 this.m_dicPlayers[String.Format("procon.playerlist.totals{0}", iTeamID)].SubItems["kdr"].Text = "0.00";
 
                 this.m_dicPlayers[String.Format("procon.playerlist.averages{0}", iTeamID)].SubItems["kit"].Text = String.Empty;
@@ -598,6 +620,7 @@ namespace PRoCon {
                 this.m_dicPlayers[String.Format("procon.playerlist.averages{0}", iTeamID)].SubItems["score"].Text = "0.00";
                 this.m_dicPlayers[String.Format("procon.playerlist.averages{0}", iTeamID)].SubItems["ping"].Text = "0.00";
                 this.m_dicPlayers[String.Format("procon.playerlist.averages{0}", iTeamID)].SubItems["rank"].Text = "-";
+                this.m_dicPlayers[String.Format("procon.playerlist.averages{0}", iTeamID)].SubItems["type"].Text = "-";
                 this.m_dicPlayers[String.Format("procon.playerlist.averages{0}", iTeamID)].SubItems["kdr"].Text = "0.00";
             }
         }
@@ -617,6 +640,7 @@ namespace PRoCon {
                 proconPlayerListTotalsObject.m_cpiPlayer.Score += player.m_cpiPlayer.Score; ;
                 proconPlayerListTotalsObject.m_cpiPlayer.Ping += player.m_cpiPlayer.Ping;
                 proconPlayerListTotalsObject.m_cpiPlayer.Rank += player.m_cpiPlayer.Rank;
+                proconPlayerListTotalsObject.m_cpiPlayer.Type += player.m_cpiPlayer.Type;
                 proconPlayerListTotalsObject.m_cpiPlayer.Kdr += (player.m_cpiPlayer.Deaths > 0 ? (float)player.m_cpiPlayer.Kills / (float)player.m_cpiPlayer.Deaths : player.m_cpiPlayer.Kills);
                 proconPlayerListTotalsObject.m_cpiPlayer.SquadID++;
 
@@ -672,6 +696,7 @@ namespace PRoCon {
                 proconPlayerListAveragesListItem.SubItems["score"].Text = String.Format("{0:0.00}", (float)proconPlayerListTotalsObject.m_cpiPlayer.Score / (float)proconPlayerListTotalsObject.m_cpiPlayer.SquadID);
                 proconPlayerListAveragesListItem.SubItems["ping"].Text = String.Format("{0:0}", (int)proconPlayerListTotalsObject.m_cpiPlayer.Ping / (float)proconPlayerListTotalsObject.m_cpiPlayer.SquadID);
                 proconPlayerListAveragesListItem.SubItems["rank"].Text = String.Format("{0:0}", (int)proconPlayerListTotalsObject.m_cpiPlayer.Rank / (float)proconPlayerListTotalsObject.m_cpiPlayer.SquadID);
+                proconPlayerListAveragesListItem.SubItems["type"].Text = String.Format("{0:0}", (int)proconPlayerListTotalsObject.m_cpiPlayer.Type / (float)proconPlayerListTotalsObject.m_cpiPlayer.SquadID);
                 proconPlayerListAveragesListItem.SubItems["kdr"].Text = String.Format("{0:0.00}", proconPlayerListTotalsObject.m_cpiPlayer.Kdr / (float)proconPlayerListTotalsObject.m_cpiPlayer.SquadID);
 
                 int mostUsedKitCount = 0;
@@ -1020,6 +1045,21 @@ namespace PRoCon {
                         }
                         
                         if (String.Compare(playerListItem.SubItems["rank"].Text, cpiPlayer.Rank.ToString()) != 0) { playerListItem.SubItems["rank"].Text = cpiPlayer.Rank.ToString(); }
+                        if (String.Compare(playerListItem.SubItems["type"].Text, cpiPlayer.Type.ToString()) != 0) { 
+                            if (cpiPlayer.Type == 0) {
+                                //playerListItem.SubItems["type"].Text = this.m_clocLanguage.GetDefaultLocalized("Player", "uscPlayerListPanel.lsvPlayers.Type.Player", null);
+                                playerListItem.SubItems["type"].Text = String.Empty;
+                            }
+                            else if (cpiPlayer.Type == 1) {
+                                playerListItem.SubItems["type"].Text = this.m_clocLanguage.GetDefaultLocalized("Spectator", "uscPlayerListPanel.lsvPlayers.Type.Spectator", null);
+                            }
+                            else if (cpiPlayer.Type == 2) {
+                                playerListItem.SubItems["type"].Text = this.m_clocLanguage.GetDefaultLocalized("Commander (PC)", "uscPlayerListPanel.lsvPlayers.Type.CommanderPC", null);
+                            }
+                            else if (cpiPlayer.Type == 3) {
+                                playerListItem.SubItems["type"].Text = this.m_clocLanguage.GetDefaultLocalized("Commander (Tablet)", "uscPlayerListPanel.lsvPlayers.Type.CommanderTablet", null);
+                            }
+                        }
 
                         AdditionalPlayerInfo sapiAdditional;
 
