@@ -1,6 +1,6 @@
 /////////////////////////////////////////////
 // This definitions file will be overwritten during an update.
-//  (2013-12-20.01)
+//  (20314-01-15.01)
 // This file contains the standard defintions required to run procon 
 // connected to a BF4 server
 /////////////////////////////////////////////
@@ -23,6 +23,9 @@ procon.protected.serverversions.add BF4 "95851" "R14"
 procon.protected.serverversions.add BF4 "96245" "R15"
 procon.protected.serverversions.add BF4 "97870" "R16"
 procon.protected.serverversions.add BF4 "99392" "R17"
+procon.protected.serverversions.add BF4 "101684" "R18"
+procon.protected.serverversions.add BF4 "102560" "R19"
+procon.protected.serverversions.add BF4 "103064" "R20"
 
 procon.protected.specialization.clear
 
@@ -215,7 +218,7 @@ procon.protected.weapons.add Recon "U_Scout" Primary SniperRifle
 procon.protected.weapons.add None "U_SerbuShorty" Auxiliary Shotgun
 procon.protected.weapons.add None "U_SG553LB" Primary Carbine
 procon.protected.weapons.add None "U_SKS" Primary DMR
-procon.protected.weapons.add None "U_SLAM" Auxiliary Explosive
+procon.protected.weapons.add Demolition "U_SLAM" Auxiliary Explosive
 procon.protected.weapons.add Demolition "U_SMAW" Secondary ProjectileExplosive
 procon.protected.weapons.add None "U_SPAS12" Primary Shotgun
 procon.protected.weapons.add Demolition "U_SRAW" Secondary ProjectileExplosive
