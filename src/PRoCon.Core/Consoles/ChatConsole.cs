@@ -46,6 +46,8 @@ namespace PRoCon.Core.Consoles {
 
         private bool _logComRoseMessages;
 
+        private bool _logPlayerDisconnected;
+
         private int _displayTimeIndex;
 
         private int _displayTypeIndex;
@@ -71,6 +73,7 @@ namespace PRoCon.Core.Consoles {
             Client.PlayerKilled += new PRoConClient.PlayerKilledHandler(m_prcClient_PlayerKilled);
             Client.Game.PlayerJoin += new FrostbiteClient.PlayerEventHandler(m_prcClient_PlayerJoin);
             Client.Game.PlayerLeft += new FrostbiteClient.PlayerLeaveHandler(m_prcClient_PlayerLeft);
+            Client.Game.PlayerDisconnected += new FrostbiteClient.PlayerDisconnectedHandler(m_prcClient_PlayerDisconnected);
 
             Client.ProconAdminSaying += new PRoConClient.ProconAdminSayingHandler(m_prcClient_ProconAdminSaying);
             Client.ProconAdminYelling += new PRoConClient.ProconAdminYellingHandler(m_prcClient_ProconAdminYelling);
@@ -84,7 +87,7 @@ namespace PRoCon.Core.Consoles {
             get { return _logJoinLeaving; }
             set {
                 if (LogJoinLeavingChanged != null) {
-                    FrostbiteConnection.RaiseEvent(LogJoinLeavingChanged.GetInvocationList(), value);
+                    this.LogJoinLeavingChanged(value);
                 }
 
                 _logJoinLeaving = value;
@@ -95,7 +98,7 @@ namespace PRoCon.Core.Consoles {
             get { return _logKills; }
             set {
                 if (LogKillsChanged != null) {
-                    FrostbiteConnection.RaiseEvent(LogKillsChanged.GetInvocationList(), value);
+                    this.LogKillsChanged(value);
                 }
 
                 _logKills = value;
@@ -106,7 +109,7 @@ namespace PRoCon.Core.Consoles {
             get { return _scrolling; }
             set {
                 if (ScrollingChanged != null) {
-                    FrostbiteConnection.RaiseEvent(ScrollingChanged.GetInvocationList(), value);
+                    this.ScrollingChanged(value);
                 }
 
                 _scrolling = value;
@@ -117,10 +120,21 @@ namespace PRoCon.Core.Consoles {
             get { return _logComRoseMessages; }
             set {
                 if (LogComRoseMessagesChanged != null) {
-                    FrostbiteConnection.RaiseEvent(LogComRoseMessagesChanged.GetInvocationList(), value);
+                    this.LogComRoseMessagesChanged(value);
                 }
 
                 _logComRoseMessages = value;
+            }
+        }
+
+        public bool LogPlayerDisconnected {
+            get { return _logPlayerDisconnected; }
+            set {
+                if (LogPlayerDisconnectedChanged != null) {
+                    this.LogPlayerDisconnectedChanged(value);
+                }
+
+                _logPlayerDisconnected = value;
             }
         }
 
@@ -130,7 +144,7 @@ namespace PRoCon.Core.Consoles {
                 _displayTypeIndex = value;
 
                 if (DisplayTypeChanged != null) {
-                    FrostbiteConnection.RaiseEvent(DisplayTypeChanged.GetInvocationList(), _displayTypeIndex);
+                    this.DisplayTypeChanged(_displayTypeIndex);
                 }
             }
         }
@@ -141,7 +155,7 @@ namespace PRoCon.Core.Consoles {
                 _displayTimeIndex = value;
 
                 if (DisplayTimeChanged != null) {
-                    FrostbiteConnection.RaiseEvent(DisplayTimeChanged.GetInvocationList(), _displayTimeIndex);
+                    this.DisplayTimeChanged(_displayTimeIndex);
                 }
             }
         }
@@ -154,7 +168,8 @@ namespace PRoCon.Core.Consoles {
                     Scrolling.ToString(),
                     DisplayTypeIndex.ToString(CultureInfo.InvariantCulture),
                     DisplayTimeIndex.ToString(CultureInfo.InvariantCulture),
-                    LogComRoseMessages.ToString()
+                    LogComRoseMessages.ToString(),
+                    LogPlayerDisconnected.ToString()
                 };
             }
             set {
@@ -185,6 +200,11 @@ namespace PRoCon.Core.Consoles {
                     if (value.Count >= 6 && bool.TryParse(value[5], out isEnabled) == true) {
                         LogComRoseMessages = isEnabled;
                     }
+
+                    if (value.Count >= 7 && bool.TryParse(value[6], out isEnabled) == true)
+                    {
+                        LogPlayerDisconnected = isEnabled;
+                    }
                 }
             }
         }
@@ -195,6 +215,7 @@ namespace PRoCon.Core.Consoles {
         public event IsEnabledHandler LogKillsChanged;
         public event IsEnabledHandler ScrollingChanged;
         public event IsEnabledHandler LogComRoseMessagesChanged;
+        public event IsEnabledHandler LogPlayerDisconnectedChanged;
         public event IndexChangedHandler DisplayTypeChanged;
         public event IndexChangedHandler DisplayTimeChanged;
 
@@ -419,6 +440,12 @@ namespace PRoCon.Core.Consoles {
             }
         }
 
+        private void m_prcClient_PlayerDisconnected(FrostbiteClient sender, string playerName, string reason) {
+            if (LogPlayerDisconnected == true) {
+                Write(DateTime.UtcNow.ToUniversalTime().AddHours(Client.Game.UtcOffset).ToLocalTime(), String.IsNullOrEmpty(reason) ? String.Format("^1{0}", Client.Language.GetLocalized("uscChatPanel.chkDisplayPlayerDisconnected.Disconnected", playerName)) : String.Format("^1{0}", Client.Language.GetLocalized("uscChatPanel.chkDisplayPlayerDisconnected.DisconnectedReason", playerName, Client.Language.GetDefaultLocalized(reason, String.Format("uscChatPanel.{0}", reason)))));
+            }
+        }
+
         private void m_prcClient_PlayerJoin(FrostbiteClient sender, string playerName) {
             if (LogJoinLeaving == true) {
                 Write(DateTime.UtcNow.ToUniversalTime().AddHours(Client.Game.UtcOffset).ToLocalTime(), String.Format("^4{0}", Client.Language.GetLocalized("uscChatPanel.chkDisplayOnJoinLeaveEvents.Joined", playerName)));
@@ -492,7 +519,7 @@ namespace PRoCon.Core.Consoles {
             Write(DateTime.UtcNow.ToUniversalTime().AddHours(Client.Game.UtcOffset).ToLocalTime(), strText);
 
             if (WriteConsoleViaCommand != null) {
-                FrostbiteConnection.RaiseEvent(WriteConsoleViaCommand.GetInvocationList(), DateTime.UtcNow.ToUniversalTime().AddHours(Client.Game.UtcOffset).ToLocalTime(), strText);
+                this.WriteConsoleViaCommand(DateTime.UtcNow.ToUniversalTime().AddHours(Client.Game.UtcOffset).ToLocalTime(), strText);
             }
         }
 
@@ -500,7 +527,7 @@ namespace PRoCon.Core.Consoles {
             WriteLogLine(String.Format("[{0}] {1}", dtLoggedTime.ToString("HH:mm:ss"), strText.Replace("{", "{{").Replace("}", "}}")));
 
             if (WriteConsole != null) {
-                FrostbiteConnection.RaiseEvent(WriteConsole.GetInvocationList(), dtLoggedTime, strText);
+                this.WriteConsole(dtLoggedTime, strText);
             }
         }
     }

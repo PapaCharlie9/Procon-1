@@ -46,7 +46,7 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
             this.AsyncSettingControls.Add("vars.roundrestartplayercount", new AsyncStyleSetting(this.picSettingsRoundRestartPlayerCount, this.numSettingsRoundRestartPlayerCount, new Control[] { this.numSettingsRoundRestartPlayerCount, this.lnkSettingsRoundRestartPlayerCount }, true));
             this.AsyncSettingControls.Add("vars.roundstartplayercount", new AsyncStyleSetting(this.picSettingsRoundStartPlayerCount, this.numSettingsRoundStartPlayerCount, new Control[] { this.numSettingsRoundStartPlayerCount, this.lnkSettingsRoundStartPlayerCount }, false));
             this.AsyncSettingControls.Add("vars.soldierhealth", new AsyncStyleSetting(this.picSettingsSoldierHealth, this.numSettingsSoldierHealth, new Control[] { this.numSettingsSoldierHealth, this.lnkSettingsSoldierHealth }, false));
-            this.AsyncSettingControls.Add("vars.playermandowntime", new AsyncStyleSetting(this.picSettingsPlayerManDownTime, this.numSettingsPlayerManDownTime, new Control[] { this.numSettingsPlayerManDownTime, this.lnkSettingsPlayerManDownTime }, true));
+            //this.AsyncSettingControls.Add("vars.playermandowntime", new AsyncStyleSetting(this.picSettingsPlayerManDownTime, this.numSettingsPlayerManDownTime, new Control[] { this.numSettingsPlayerManDownTime, this.lnkSettingsPlayerManDownTime }, true));
             this.AsyncSettingControls.Add("vars.playerrespawntime", new AsyncStyleSetting(this.picSettingsPlayerRespawnTime, this.numSettingsPlayerRespawnTime, new Control[] { this.numSettingsPlayerRespawnTime, this.lnkSettingsPlayerRespawnTime }, true));
 
             this.AsyncSettingControls.Add("vars.gameModeCounter", new AsyncStyleSetting(this.picSettingsGameModeCounter, this.numSettingsGameModeCounter, new Control[] { this.numSettingsGameModeCounter, this.lnkSettingsGameModeCounter }, false));
@@ -115,6 +115,10 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
             this.cboGameplayPresets.Items.Add("Infantry Only");
             this.cboGameplayPresets.SelectedIndex = 0;
 
+            this.cboGameplayPresets.Visible = false;
+            this.lblGameplayPresets.Visible = false;
+            this.btnGameplayPresets.Visible = false;
+
             ArrayList UnlockModes = new ArrayList();
             UnlockModes.Add(new UnlockMode(this.Language.GetLocalized("uscServerSettingsPanel.cboSettingsUnlockMode.None"), UnlockModeType.none.ToString()));
             UnlockModes.Add(new UnlockMode(this.Language.GetLocalized("uscServerSettingsPanel.cboSettingsUnlockMode.All"), UnlockModeType.all.ToString()));
@@ -158,7 +162,10 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
             this.cboSettingsGunMasterWeaponsPreset.DisplayMember = "LongName";
             this.cboSettingsGunMasterWeaponsPreset.ValueMember = "ShortName";
 
-
+            this.lblSettingsPlayerManDownTime.Visible = false;
+            this.numSettingsPlayerManDownTime.Visible = false;
+            this.lnkSettingsPlayerManDownTime.Visible = false;
+            this.picSettingsPlayerManDownTime.Visible = false;
         }
 
         public override void SetConnection(Core.Remote.PRoConClient prcClient) {
@@ -180,44 +187,46 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
         }
 
         private void m_prcClient_GameTypeDiscovered(PRoConClient sender) {
-            this.Client.Game.TeamBalance += new FrostbiteClient.IsEnabledHandler(m_prcClient_TeamBalance);
-            this.Client.Game.KillCam += new FrostbiteClient.IsEnabledHandler(m_prcClient_KillCam);
-            this.Client.Game.MiniMap += new FrostbiteClient.IsEnabledHandler(m_prcClient_MiniMap);
-            this.Client.Game.CrossHair += new FrostbiteClient.IsEnabledHandler(m_prcClient_CrossHair);
-            this.Client.Game.ThreeDSpotting += new FrostbiteClient.IsEnabledHandler(m_prcClient_ThreeDSpotting);
-            this.Client.Game.MiniMapSpotting += new FrostbiteClient.IsEnabledHandler(m_prcClient_MiniMapSpotting);
-            this.Client.Game.ThirdPersonVehicleCameras += new FrostbiteClient.IsEnabledHandler(m_prcClient_ThirdPersonVehicleCameras);
+            this.InvokeIfRequired(() => {
+                this.Client.Game.TeamBalance += new FrostbiteClient.IsEnabledHandler(m_prcClient_TeamBalance);
+                this.Client.Game.KillCam += new FrostbiteClient.IsEnabledHandler(m_prcClient_KillCam);
+                this.Client.Game.MiniMap += new FrostbiteClient.IsEnabledHandler(m_prcClient_MiniMap);
+                this.Client.Game.CrossHair += new FrostbiteClient.IsEnabledHandler(m_prcClient_CrossHair);
+                this.Client.Game.ThreeDSpotting += new FrostbiteClient.IsEnabledHandler(m_prcClient_ThreeDSpotting);
+                this.Client.Game.MiniMapSpotting += new FrostbiteClient.IsEnabledHandler(m_prcClient_MiniMapSpotting);
+                this.Client.Game.ThirdPersonVehicleCameras += new FrostbiteClient.IsEnabledHandler(m_prcClient_ThirdPersonVehicleCameras);
 
-            this.Client.Game.NameTag += new FrostbiteClient.IsEnabledHandler(Game_NameTag);
-            this.Client.Game.OnlySquadLeaderSpawn += new FrostbiteClient.IsEnabledHandler(Game_OnlySquadLeaderSpawn);
-            this.Client.Game.RegenerateHealth += new FrostbiteClient.IsEnabledHandler(Game_RegenerateHealth);
-            this.Client.Game.Hud += new FrostbiteClient.IsEnabledHandler(Game_Hud);
-            
-            this.Client.Game.UnlockMode += new FrostbiteClient.UnlockModeHandler(Game_UnlockMode);
-            this.Client.Game.BF4preset += new FrostbiteClient.BF4presetHandler(Game_BF4preset);
-            // not used in BF4 //this.Client.Game.GunMasterWeaponsPreset += new FrostbiteClient.GunMasterWeaponsPresetHandler(Game_GunMasterWeaponsPreset);
+                this.Client.Game.NameTag += new FrostbiteClient.IsEnabledHandler(Game_NameTag);
+                this.Client.Game.OnlySquadLeaderSpawn += new FrostbiteClient.IsEnabledHandler(Game_OnlySquadLeaderSpawn);
+                this.Client.Game.RegenerateHealth += new FrostbiteClient.IsEnabledHandler(Game_RegenerateHealth);
+                this.Client.Game.Hud += new FrostbiteClient.IsEnabledHandler(Game_Hud);
 
-            this.Client.Game.VehicleSpawnAllowed += new FrostbiteClient.IsEnabledHandler(Game_VehicleSpawnAllowed);
-            this.Client.Game.VehicleSpawnDelay += new FrostbiteClient.LimitHandler(Game_VehicleSpawnDelay);
+                this.Client.Game.UnlockMode += new FrostbiteClient.UnlockModeHandler(Game_UnlockMode);
+                this.Client.Game.BF4preset += new FrostbiteClient.BF4presetHandler(Game_BF4preset);
+                // not used in BF4 //this.Client.Game.GunMasterWeaponsPreset += new FrostbiteClient.GunMasterWeaponsPresetHandler(Game_GunMasterWeaponsPreset);
 
-            this.Client.Game.BulletDamage += new FrostbiteClient.LimitHandler(Game_BulletDamage);
-            this.Client.Game.RoundRestartPlayerCount += new FrostbiteClient.LimitHandler(Game_RoundRestartPlayerCount);
-            this.Client.Game.RoundStartPlayerCount += new FrostbiteClient.LimitHandler(Game_RoundStartPlayerCount);
+                this.Client.Game.VehicleSpawnAllowed += new FrostbiteClient.IsEnabledHandler(Game_VehicleSpawnAllowed);
+                this.Client.Game.VehicleSpawnDelay += new FrostbiteClient.LimitHandler(Game_VehicleSpawnDelay);
 
-            this.Client.Game.SoldierHealth += new FrostbiteClient.LimitHandler(Game_SoldierHealth);
-            this.Client.Game.PlayerManDownTime += new FrostbiteClient.LimitHandler(Game_PlayerManDownTime);
+                this.Client.Game.BulletDamage += new FrostbiteClient.LimitHandler(Game_BulletDamage);
+                this.Client.Game.RoundRestartPlayerCount += new FrostbiteClient.LimitHandler(Game_RoundRestartPlayerCount);
+                this.Client.Game.RoundStartPlayerCount += new FrostbiteClient.LimitHandler(Game_RoundStartPlayerCount);
 
-            this.Client.Game.PlayerRespawnTime += new FrostbiteClient.LimitHandler(Game_PlayerRespawnTime);
+                this.Client.Game.SoldierHealth += new FrostbiteClient.LimitHandler(Game_SoldierHealth);
+                this.Client.Game.PlayerManDownTime += new FrostbiteClient.LimitHandler(Game_PlayerManDownTime);
 
-            this.Client.Game.GameModeCounter += new FrostbiteClient.LimitHandler(Game_GameModeCounter);
-            this.Client.Game.RoundTimeLimit +=new FrostbiteClient.LimitHandler(Game_RoundTimeLimit);
-            this.Client.Game.RoundLockdownCountdown += new FrostbiteClient.LimitHandler(Game_RoundLockdownCountdown);
-            this.Client.Game.RoundWarmupTimeout += new FrostbiteClient.LimitHandler(Game_RoundWarmupTimeout);
-            this.Client.Game.TicketBleedRate += new FrostbiteClient.LimitHandler(Game_TicketBleedRate);
+                this.Client.Game.PlayerRespawnTime += new FrostbiteClient.LimitHandler(Game_PlayerRespawnTime);
 
-            this.Client.Game.IsHitIndicator += new FrostbiteClient.IsEnabledHandler(Game_IsHitIndicator);
+                this.Client.Game.GameModeCounter += new FrostbiteClient.LimitHandler(Game_GameModeCounter);
+                this.Client.Game.RoundTimeLimit += new FrostbiteClient.LimitHandler(Game_RoundTimeLimit);
+                this.Client.Game.RoundLockdownCountdown += new FrostbiteClient.LimitHandler(Game_RoundLockdownCountdown);
+                this.Client.Game.RoundWarmupTimeout += new FrostbiteClient.LimitHandler(Game_RoundWarmupTimeout);
+                this.Client.Game.TicketBleedRate += new FrostbiteClient.LimitHandler(Game_TicketBleedRate);
 
-            this.Client.Game.IsForceReloadWholeMags += new FrostbiteClient.IsEnabledHandler(Game_IsForceReloadWholeMags);
+                this.Client.Game.IsHitIndicator += new FrostbiteClient.IsEnabledHandler(Game_IsHitIndicator);
+
+                this.Client.Game.IsForceReloadWholeMags += new FrostbiteClient.IsEnabledHandler(Game_IsForceReloadWholeMags);
+            });
         }
 
 
@@ -426,12 +435,13 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
 
         private string m_strPreviousSuccessUnlockMode;
 
-        private void Game_UnlockMode(FrostbiteClient sender, string mode)
-        {
-            this.m_strPreviousSuccessUnlockMode = mode.ToString();
-            this.OnSettingResponse("vars.unlockmode", mode.ToString(), true);
+        private void Game_UnlockMode(FrostbiteClient sender, string mode) {
+            this.InvokeIfRequired(() => {
+                this.m_strPreviousSuccessUnlockMode = mode.ToString();
+                this.OnSettingResponse("vars.unlockmode", mode.ToString(), true);
 
-            this.cboSettingsUnlockMode.SelectedValue = mode.ToString().ToLower();
+                this.cboSettingsUnlockMode.SelectedValue = mode.ToString().ToLower();
+            });
         }
 
         private void lnkSettingsUnlockMode_LinkClicked(object sender, EventArgs e)
@@ -455,43 +465,45 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
         private string m_strPreviousSuccessBF4preset;
 
         private void Game_BF4preset(FrostbiteClient sender, string mode, bool locked) {
-            this.m_strPreviousSuccessBF4preset = mode.ToString();
-            this.OnSettingResponse("vars.preset", mode.ToString(), true);
+            this.InvokeIfRequired(() => {
+                this.m_strPreviousSuccessBF4preset = mode.ToString();
+                this.OnSettingResponse("vars.preset", mode.ToString(), true);
 
-            this.cboSettingsBF4preset.SelectedValue = mode.ToString();
-            this.chkSettingsBF4presetLock.Checked = locked;
+                this.cboSettingsBF4preset.SelectedValue = mode.ToString();
+                this.chkSettingsBF4presetLock.Checked = locked;
 
-            // make all related values readOnly if locked is true
-            this.chkSettingsFriendlyFire.Enabled = !locked;
-            this.chkSettingsKillCam.Enabled = !locked;
-            this.chkSettingsMinimap.Enabled = !locked;
-            this.chkSettingsNameTag.Enabled = !locked;
-            this.chkSettingsRegenerateHealth.Enabled = !locked;
-            this.chkSettingsHud.Enabled = !locked;
-            this.chkSettingsOnlySquadLeaderSpawn.Enabled = !locked;
-            this.chkSettingsVehicleSpawnAllowed.Enabled = !locked;
-            this.chkSettings3DSpotting.Enabled = !locked;
-            this.chkSettingsIsHitIndicators.Enabled = !locked;
-            this.chkSettingsIsForceReloadWholeMags.Enabled = !locked;
-            this.chkSettings3DSpotting.Enabled = !locked;
-            this.chkSettingsMinimapSpotting.Enabled = !locked;
-            this.chkSettingsThirdPersonVehicleCameras.Enabled = !locked;
-            this.chkSettingsTeamBalance.Enabled = !locked;
-            //
-            this.numSettingsBulletDamage.Enabled = !locked;
-            this.lnkSettingsBulletDamage.Enabled = !locked;
-            this.numSettingsRoundStartPlayerCount.Enabled = !locked;
-            this.lnkSettingsRoundStartPlayerCount.Enabled = !locked;
-            this.numSettingsSoldierHealth.Enabled = !locked;
-            this.lnkSettingsSoldierHealth.Enabled = !locked;
-            this.numSettingsPlayerRespawnTime.Enabled = !locked;
-            this.lnkSettingsPlayerRespawnTime.Enabled = !locked;
-            this.numSettingsGameModeCounter.Enabled = !locked;
-            this.lnkSettingsGameModeCounter.Enabled = !locked;
-            this.numSettingsRoundTimeLimit.Enabled = !locked;
-            this.lnkSettingsRoundTimeLimit.Enabled = !locked;
-            this.numSettingsTicketBleedRate.Enabled = !locked;
-            this.lnkSettingsTicketBleedRate.Enabled = !locked;
+                // make all related values readOnly if locked is true
+                this.chkSettingsFriendlyFire.Enabled = !locked;
+                this.chkSettingsKillCam.Enabled = !locked;
+                this.chkSettingsMinimap.Enabled = !locked;
+                this.chkSettingsNameTag.Enabled = !locked;
+                this.chkSettingsRegenerateHealth.Enabled = !locked;
+                this.chkSettingsHud.Enabled = !locked;
+                this.chkSettingsOnlySquadLeaderSpawn.Enabled = !locked;
+                this.chkSettingsVehicleSpawnAllowed.Enabled = !locked;
+                this.chkSettings3DSpotting.Enabled = !locked;
+                this.chkSettingsIsHitIndicators.Enabled = !locked;
+                this.chkSettingsIsForceReloadWholeMags.Enabled = !locked;
+                this.chkSettings3DSpotting.Enabled = !locked;
+                this.chkSettingsMinimapSpotting.Enabled = !locked;
+                this.chkSettingsThirdPersonVehicleCameras.Enabled = !locked;
+                this.chkSettingsTeamBalance.Enabled = !locked;
+                //
+                this.numSettingsBulletDamage.Enabled = !locked;
+                this.lnkSettingsBulletDamage.Enabled = !locked;
+                this.numSettingsRoundStartPlayerCount.Enabled = !locked;
+                this.lnkSettingsRoundStartPlayerCount.Enabled = !locked;
+                this.numSettingsSoldierHealth.Enabled = !locked;
+                this.lnkSettingsSoldierHealth.Enabled = !locked;
+                this.numSettingsPlayerRespawnTime.Enabled = !locked;
+                this.lnkSettingsPlayerRespawnTime.Enabled = !locked;
+                this.numSettingsGameModeCounter.Enabled = !locked;
+                this.lnkSettingsGameModeCounter.Enabled = !locked;
+                this.numSettingsRoundTimeLimit.Enabled = !locked;
+                this.lnkSettingsRoundTimeLimit.Enabled = !locked;
+                this.numSettingsTicketBleedRate.Enabled = !locked;
+                this.lnkSettingsTicketBleedRate.Enabled = !locked;
+            });
         }
 
         private void lnkSettingsBF4preset_LinkClicked(object sender, EventArgs e) {
@@ -516,12 +528,13 @@ namespace PRoCon.Controls.ServerSettings.BF4 {
 
         private int m_iPreviousSuccessGunMasterWeaponsPreset;
 
-        private void Game_GunMasterWeaponsPreset(FrostbiteClient sender, int preset)
-        {
-            this.m_iPreviousSuccessGunMasterWeaponsPreset = preset;
-            this.OnSettingResponse("vars.gunMasterWeaponsPreset", (decimal)preset, true);
+        private void Game_GunMasterWeaponsPreset(FrostbiteClient sender, int preset) {
+            this.InvokeIfRequired(() => {
+                this.m_iPreviousSuccessGunMasterWeaponsPreset = preset;
+                this.OnSettingResponse("vars.gunMasterWeaponsPreset", (decimal) preset, true);
 
-            this.cboSettingsGunMasterWeaponsPreset.SelectedValue = preset.ToString();
+                this.cboSettingsGunMasterWeaponsPreset.SelectedValue = preset.ToString();
+            });
         }
 
         private void lnkSettingsGunMasterWeaponsPreset_LinkClicked(object sender, EventArgs e)

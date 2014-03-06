@@ -1,23 +1,3 @@
-/*  Copyright 2010 Geoffrey 'Phogue' Green
-
-    http://www.phogue.net
- 
-    This file is part of PRoCon Frostbite.
-
-    PRoCon Frostbite is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    PRoCon Frostbite is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with PRoCon Frostbite.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
@@ -30,7 +10,6 @@ using System.Security.Permissions;
 using System.Security.Policy;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Xml.Linq;
 using Microsoft.CSharp;
 using PRoCon.Core.Accounts;
 using PRoCon.Core.Battlemap;
@@ -73,13 +52,18 @@ namespace PRoCon.Core.Plugin {
         ///     If they have it will destroy the AppDomain, rebuilding it but not loading
         ///     the faulty plugin.
         /// </summary>
-        protected Thread InvocationTimeoutThread { get; set; }
+        protected Timer InvocationTimeoutTimer { get; set; }
 
         /// <summary>
-        ///     Checked inside of the invocation timeout loop. If false
-        ///     the thread will gracefully exit.
+        /// Bool specifying if a check is currently occuring for plugin invocation timeouts. We
+        /// ignore the check instead of blocking.
         /// </summary>
-        protected Boolean InvocationTimeoutThreadRunning { get; set; }
+        protected bool InvocationTimeoutCheckRunning { get; set; }
+
+        /// <summary>
+        /// The maximum time span a single invocation can run
+        /// </summary>
+        protected TimeSpan InvocationMaxRuntime { get; set; }
 
         /// <summary>
         ///     A list of plugin class names that have previously been deemed as
@@ -138,6 +122,10 @@ namespace PRoCon.Core.Plugin {
             get { return Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, PluginsDirectoryName), ProconClient.GameType); }
         }
 
+        public string PluginDebugTempDirectory {
+            get { return Path.Combine(this.PluginBaseDirectory, "Temp"); }
+        }
+
         #endregion
 
         public PluginManager(PRoConClient cpcClient) {
@@ -157,57 +145,50 @@ namespace PRoCon.Core.Plugin {
             Invocations = new List<PluginInvocation>();
             IgnoredPluginClassNames = new List<String>();
 
-            InvocationTimeoutThreadRunning = true;
-            InvocationTimeoutThread = new Thread(new ThreadStart(InvocationTimeoutLoop));
-            InvocationTimeoutThread.Start();
+            this.InvocationMaxRuntime = ProconClient.PluginMaxRuntimeSpan;
 
-            AssignEventHandler();
-        }
-
-        private void InvocationTimeoutLoop() {
-            // should be configurable via options
-            TimeSpan pluginMaxRuntime = PluginInvocation.MaximumRuntime;
-            //PluginMaxRuntime = new TimeSpan(0, 0, 59);
-            pluginMaxRuntime = ProconClient.PluginMaxRuntimeSpan;
-
-            if (pluginMaxRuntime.TotalMilliseconds < 10) {
-                pluginMaxRuntime = PluginInvocation.MaximumRuntime;
+            if (this.InvocationMaxRuntime.TotalMilliseconds < 10) {
+                this.InvocationMaxRuntime = PluginInvocation.MaximumRuntime;
             }
 
             // Default maximum runtime = 5 seconds, divided by 20
             // check every 250 milliseconds.
-            var sleepMilliseconds = (int) (pluginMaxRuntime.TotalMilliseconds / 20.0);
+            this.InvocationTimeoutTimer = new Timer(state => this.InvocationTimeoutCheck(), null, (int)(this.InvocationMaxRuntime.TotalMilliseconds / 20.0), (int)(this.InvocationMaxRuntime.TotalMilliseconds / 20.0));
 
-            while (InvocationTimeoutThreadRunning) {
-                lock (this) {
-                    PluginInvocation invocation = Invocations.FirstOrDefault(); // .OrderBy(x => x.Runtime())
+            AssignEventHandler();
+        }
 
-                    if (invocation != null) {
-                        if (invocation.Runtime() >= pluginMaxRuntime) {
-                            WritePluginConsole("^1^bPlugin manager entering panic..");
+        private void InvocationTimeoutCheck() {
+            if (this.InvocationTimeoutCheckRunning == false) {
+                this.InvocationTimeoutCheckRunning = true;
 
-                            // Prevent the plugin from being loaded again during this instance
-                            // of the plugin manager.
-                            IgnoredPluginClassNames.Add(invocation.Plugin.ClassName);
+                PluginInvocation invocation = Invocations.FirstOrDefault(); // .OrderBy(x => x.Runtime())
 
-                            String faultText = invocation.FormatInvocationFault("Call exceeded maximum execution time of {0}", pluginMaxRuntime);
+                if (invocation != null) {
+                    if (invocation.Runtime() >= this.InvocationMaxRuntime) {
+                        WritePluginConsole("^1^bPlugin manager entering panic..");
 
-                            // Log the error so we might alert a plugin developer that
-                            // a call to their plugin has caused the plugin manager to go
-                            // into a panic.
-                            File.AppendAllText("PLUGIN_DEBUG.txt", faultText);
+                        // Prevent the plugin from being loaded again during this instance
+                        // of the plugin manager.
+                        IgnoredPluginClassNames.Add(invocation.Plugin.ClassName);
 
-                            WritePluginConsole("^1^bPlugin invocation timeout: ");
-                            WritePluginConsole("^1" + faultText);
+                        String faultText = invocation.FormatInvocationFault("Call exceeded maximum execution time of {0}", this.InvocationMaxRuntime);
 
-                            if (PluginPanic != null) {
-                                PluginPanic();
-                            }
+                        // Log the error so we might alert a plugin developer that
+                        // a call to their plugin has caused the plugin manager to go
+                        // into a panic.
+                        File.AppendAllText("PLUGIN_DEBUG.txt", faultText);
+
+                        WritePluginConsole("^1^bPlugin invocation timeout: ");
+                        WritePluginConsole("^1" + faultText);
+
+                        if (PluginPanic != null) {
+                            PluginPanic();
                         }
                     }
-                }
 
-                Thread.Sleep(sleepMilliseconds);
+                    this.InvocationTimeoutCheckRunning = false;
+                }
             }
         }
 
@@ -280,7 +261,7 @@ namespace PRoCon.Core.Plugin {
 
         private void WritePluginConsole(string strFormat, params object[] arguments) {
             if (PluginOutput != null) {
-                FrostbiteConnection.RaiseEvent(PluginOutput.GetInvocationList(), String.Format(strFormat, arguments));
+                this.PluginOutput(String.Format(strFormat, arguments));
             }
         }
 
@@ -292,7 +273,7 @@ namespace PRoCon.Core.Plugin {
                     Plugins[className].Type.Invoke("OnPluginEnable");
 
                     if (PluginEnabled != null) {
-                        FrostbiteConnection.RaiseEvent(PluginEnabled.GetInvocationList(), className);
+                        this.PluginEnabled(className);
                     }
                 }
                 catch (Exception e) {
@@ -309,7 +290,7 @@ namespace PRoCon.Core.Plugin {
                     Plugins[className].Type.Invoke("OnPluginDisable");
 
                     if (PluginDisabled != null) {
-                        FrostbiteConnection.RaiseEvent(PluginDisabled.GetInvocationList(), className);
+                        this.PluginDisabled(className);
                     }
                 }
                 catch (Exception e) {
@@ -319,29 +300,26 @@ namespace PRoCon.Core.Plugin {
         }
 
         public PluginDetails GetPluginDetails(string strClassName) {
-            var spdReturnDetails = new PluginDetails();
-
-            spdReturnDetails.ClassName = strClassName;
-            spdReturnDetails.Name = InvokeOnLoaded_String(strClassName, "GetPluginName");
-            spdReturnDetails.Author = InvokeOnLoaded_String(strClassName, "GetPluginAuthor");
-            spdReturnDetails.Version = InvokeOnLoaded_String(strClassName, "GetPluginVersion");
-            spdReturnDetails.Website = InvokeOnLoaded_String(strClassName, "GetPluginWebsite");
-            spdReturnDetails.Description = InvokeOnLoaded_String(strClassName, "GetPluginDescription");
-
-            spdReturnDetails.DisplayPluginVariables = InvokeOnLoaded_CPluginVariables(strClassName, "GetDisplayPluginVariables");
-            spdReturnDetails.PluginVariables = InvokeOnLoaded_CPluginVariables(strClassName, "GetPluginVariables");
-
-            return spdReturnDetails;
+            return new PluginDetails {
+                ClassName = strClassName,
+                Name = InvokeOnLoaded_String(strClassName, "GetPluginName"),
+                Author = InvokeOnLoaded_String(strClassName, "GetPluginAuthor"),
+                Version = InvokeOnLoaded_String(strClassName, "GetPluginVersion"),
+                Website = InvokeOnLoaded_String(strClassName, "GetPluginWebsite"),
+                Description = InvokeOnLoaded_String(strClassName, "GetPluginDescription"),
+                DisplayPluginVariables = InvokeOnLoaded_CPluginVariables(strClassName, "GetDisplayPluginVariables"),
+                PluginVariables = InvokeOnLoaded_CPluginVariables(strClassName, "GetPluginVariables")
+            };
         }
 
-        public void SetPluginVariable(string strClassName, string strVariable, string strValue) {
+        public void SetPluginVariable(string strClassName, string strVariable, string strValue, bool notification = true) {
             // FailCompiledPlugins
 
             if (Plugins.Contains(strClassName) == true && Plugins[strClassName].IsLoaded == true) {
                 InvokeOnLoaded(strClassName, "SetPluginVariable", new object[] {strVariable, strValue});
 
-                if (PluginVariableAltered != null) {
-                    FrostbiteConnection.RaiseEvent(PluginVariableAltered.GetInvocationList(), GetPluginDetails(strClassName));
+                if (PluginVariableAltered != null && notification == true) {
+                    this.PluginVariableAltered(GetPluginDetails(strClassName));
                 }
             }
             else if (Plugins.IsLoaded(strClassName) == false) {
@@ -359,30 +337,25 @@ namespace PRoCon.Core.Plugin {
         }
 
         public PluginDetails GetPluginDetailsCon(string strClassName) {
-            var spdReturnDetails = new PluginDetails();
-
-            spdReturnDetails.ClassName = strClassName;
-            spdReturnDetails.Name = InvokeOnLoaded_String(strClassName, "GetPluginName");
-            spdReturnDetails.Author = InvokeOnLoaded_String(strClassName, "GetPluginAuthor");
-            spdReturnDetails.Version = InvokeOnLoaded_String(strClassName, "GetPluginVersion");
-            spdReturnDetails.Website = InvokeOnLoaded_String(strClassName, "GetPluginWebsite");
-            spdReturnDetails.Description = InvokeOnLoaded_String(strClassName, "GetPluginDescription");
-
-            // a bit rough but for the moment...  
-            //spdReturnDetails.DisplayPluginVariables = this.InvokeOnLoaded_CPluginVariables(strClassName, "GetDisplayPluginVariables");
-            spdReturnDetails.PluginVariables = InvokeOnLoaded_CPluginVariables(strClassName, "GetPluginVariables");
-
-            return spdReturnDetails;
+            return new PluginDetails {
+                ClassName = strClassName,
+                Name = InvokeOnLoaded_String(strClassName, "GetPluginName"),
+                Author = InvokeOnLoaded_String(strClassName, "GetPluginAuthor"),
+                Version = InvokeOnLoaded_String(strClassName, "GetPluginVersion"),
+                Website = InvokeOnLoaded_String(strClassName, "GetPluginWebsite"),
+                Description = InvokeOnLoaded_String(strClassName, "GetPluginDescription"),
+                PluginVariables = InvokeOnLoaded_CPluginVariables(strClassName, "GetPluginVariables")
+            };
         }
 
-        public void SetPluginVariableCon(string strClassName, string strVariable, string strValue) {
+        public void SetPluginVariableCon(string strClassName, string strVariable, string strValue, bool notification = true) {
             // FailCompiledPlugins
 
             if (Plugins.Contains(strClassName) == true && Plugins[strClassName].IsLoaded == true) {
                 InvokeOnLoaded(strClassName, "SetPluginVariable", new object[] {strVariable, strValue});
 
-                if (PluginVariableAltered != null) {
-                    FrostbiteConnection.RaiseEvent(PluginVariableAltered.GetInvocationList(), GetPluginDetailsCon(strClassName));
+                if (PluginVariableAltered != null && notification == true) {
+                    this.PluginVariableAltered(GetPluginDetailsCon(strClassName));
                 }
             }
             else if (Plugins.IsLoaded(strClassName) == false) {
@@ -505,6 +478,18 @@ namespace PRoCon.Core.Plugin {
                 File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PRoCon.Core.dll"), Path.Combine(PluginBaseDirectory, "PRoCon.Core.dll"), true);
                 File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MySql.Data.dll"), Path.Combine(PluginBaseDirectory, "MySql.Data.dll"), true);
                 File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PRoCon.Core.pdb"), Path.Combine(PluginBaseDirectory, "PRoCon.Core.pdb"), true);
+
+                // Clean up temp directory
+                if (Directory.Exists(PluginDebugTempDirectory) == true) {
+                    foreach (string file in Directory.GetFiles(PluginDebugTempDirectory)) {
+                        File.Delete(file);
+                    }
+                }
+
+                // Remove PDB files from plugin directory
+                foreach (string file in Directory.GetFiles(PluginBaseDirectory, "*.pdb")) {
+                    File.Delete(file);
+                }
             }
             catch {
             }
@@ -543,7 +528,34 @@ namespace PRoCon.Core.Plugin {
             parameters.ReferencedAssemblies.Add("MySql.Data.dll");
             parameters.ReferencedAssemblies.Add("PRoCon.Core.dll");
             parameters.GenerateInMemory = false;
-            parameters.IncludeDebugInformation = false;
+            parameters.IncludeDebugInformation = this.ProconClient.Parent.OptionsSettings.EnablePluginDebugging;
+
+            if (this.ProconClient.Parent.OptionsSettings.EnablePluginDebugging == true)
+            {
+                Directory.CreateDirectory(PluginDebugTempDirectory); // checks also if folder exists, in that case does nothing
+                
+                if (!Directory.Exists(PluginDebugTempDirectory))
+                {
+                    WritePluginConsole("^1PluginManager.CompilePlugin(): failed to create temp directory");
+                    // TODO: Disable debugging when directory creation fails?
+                    //parameters.IncludeDebugInformation = false;
+                }
+            }
+            else
+            {
+                try
+                {
+                    if (Directory.Exists(PluginDebugTempDirectory))
+                    {
+                        Directory.Delete(PluginDebugTempDirectory, true);
+                    }
+                }
+                catch (Exception e)
+                {
+                    WritePluginConsole("^1PluginManager.CompilePlugin(): delete directory error: {0};", e.Message);
+                }
+            }
+
             parameters.OutputAssembly = "Default.dll";
 
             return parameters;
@@ -631,8 +643,9 @@ namespace PRoCon.Core.Plugin {
 
             String outputAssembly = Path.Combine(PluginBaseDirectory, pluginClassName + ".dll");
 
-            if (requiresRecompiling == true || File.Exists(outputAssembly) == false) {
-
+            // 2.1: check if plugin debugging is enabled, always force compilation if true
+            if (requiresRecompiling == true || File.Exists(outputAssembly) == false || this.ProconClient.Parent.OptionsSettings.EnablePluginDebugging == true)
+            {
                 // 3. If a compiled plugin exists already, remove it now.
                 if (File.Exists(outputAssembly) == true) {
                     try {
@@ -645,6 +658,9 @@ namespace PRoCon.Core.Plugin {
 
                 try {
                     parameters.OutputAssembly = outputAssembly;
+                    if (this.ProconClient.Parent.OptionsSettings.EnablePluginDebugging == true) {
+                        parameters.TempFiles = new TempFileCollection(PluginDebugTempDirectory, true);
+                    }
 
                     // 4. Now compile the plugin
                     this.PrintPluginResults(pluginFile, pluginsCodeDomProvider.CompileAssemblyFromSource(parameters, fullPluginSource));
@@ -703,7 +719,7 @@ namespace PRoCon.Core.Plugin {
                 InvokeOnLoaded(pluginClassName, "OnPluginLoaded", ProconClient.HostName, ProconClient.Port.ToString(CultureInfo.InvariantCulture), Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
                 if (PluginLoaded != null) {
-                    FrostbiteConnection.RaiseEvent(PluginLoaded.GetInvocationList(), pluginClassName);
+                    this.PluginLoaded(pluginClassName);
                 }
             }
             //else {
@@ -735,7 +751,7 @@ namespace PRoCon.Core.Plugin {
                     WritePluginConsole("Loading plugin cache..");
 
                     try {
-                        this.PluginCache = XDocument.Load(Path.Combine(this.PluginBaseDirectory, "PluginCache.xml")).Root.FromXElement<PluginCache>();
+                        this.PluginCache = PluginCache.Load(Path.Combine(this.PluginBaseDirectory, "PluginCache.xml"));
                     }
                     catch (Exception e) {
                         WritePluginConsole("Error loading plugin cache: {0}", e.Message);
@@ -801,10 +817,14 @@ namespace PRoCon.Core.Plugin {
                 WritePluginConsole("Configuring sandbox..");
                 // create the factory class in the secondary app-domain
                 PluginFactory = (CPRoConPluginLoaderFactory) AppDomainSandbox.CreateInstance("PRoCon.Core", "PRoCon.Core.Plugin.CPRoConPluginLoaderFactory").Unwrap();
-                PluginCallbacks = new CPRoConPluginCallbacks(ProconClient.ExecuteCommand, ProconClient.GetAccountPrivileges, ProconClient.GetVariable, ProconClient.GetSvVariable, ProconClient.GetMapDefines, ProconClient.TryGetLocalized, RegisterCommand, UnregisterCommand, GetRegisteredCommands, ProconClient.GetWeaponDefines, ProconClient.GetSpecializationDefines, ProconClient.Layer.GetLoggedInAccounts, RegisterPluginEvents);
+                PluginCallbacks = new CPRoConPluginCallbacks(ProconClient.ExecuteCommand, ProconClient.GetAccountPrivileges, ProconClient.GetVariable, ProconClient.GetSvVariable, ProconClient.GetMapDefines, ProconClient.TryGetLocalized, RegisterCommand, UnregisterCommand, GetRegisteredCommands, ProconClient.GetWeaponDefines, ProconClient.GetSpecializationDefines, ProconClient.Layer.GetLoggedInAccountUsernames, RegisterPluginEvents);
 
                 WritePluginConsole("Compiling and loading plugins..");
 
+                if (this.ProconClient.Parent.OptionsSettings.EnablePluginDebugging == true) {
+                    WritePluginConsole("^b^1*** PLUGIN DEBUGGING ENABLED ***^0^n");
+                    WritePluginConsole("^b^1If you're not actively testing or debugging a plugin, please disable this setting in Procon's options!^0^n");
+                }
 
                 var pluginsDirectoryInfo = new DirectoryInfo(PluginBaseDirectory);
                 string className = string.Empty;
@@ -832,9 +852,7 @@ namespace PRoCon.Core.Plugin {
                     }
                 }
 
-                XDocument pluginCacheDocument = new XDocument(this.PluginCache.ToXElement());
-
-                pluginCacheDocument.Save(Path.Combine(this.PluginBaseDirectory, "PluginCache.xml"));
+                this.PluginCache.Save(Path.Combine(this.PluginBaseDirectory, "PluginCache.xml"));
 
                 pluginsCodeDomProvider.Dispose();
             }
@@ -850,13 +868,13 @@ namespace PRoCon.Core.Plugin {
             //this.LoadedClassNames = null;
             ProconClient = null;
 
-            InvocationTimeoutThreadRunning = false;
+            this.InvocationTimeoutTimer.Dispose();
         }
 
         public void Unload() {
             UnassignEventHandler();
 
-            InvocationTimeoutThreadRunning = false;
+            this.InvocationTimeoutTimer.Dispose();
 
             try {
                 if (AppDomainSandbox != null) {
@@ -883,6 +901,7 @@ namespace PRoCon.Core.Plugin {
 
             ProconClient.Game.PlayerJoin -= new FrostbiteClient.PlayerEventHandler(m_prcClient_PlayerJoin);
             ProconClient.Game.PlayerLeft -= new FrostbiteClient.PlayerLeaveHandler(m_prcClient_PlayerLeft);
+            ProconClient.Game.PlayerDisconnected -= new FrostbiteClient.PlayerDisconnectedHandler(m_prcClient_PlayerDisconnected);
             ProconClient.Game.PlayerAuthenticated -= new FrostbiteClient.PlayerAuthenticatedHandler(m_prcClient_PlayerAuthenticated);
             ProconClient.Game.PlayerKicked -= new FrostbiteClient.PlayerKickedHandler(m_prcClient_PlayerKicked);
             ProconClient.Game.PlayerChangedTeam -= new FrostbiteClient.PlayerTeamChangeHandler(m_prcClient_PlayerChangedTeam);
@@ -1082,11 +1101,11 @@ namespace PRoCon.Core.Plugin {
 
             #region Layer Accounts
 
-            foreach (PRoConLayerClient client in ProconClient.Layer.LayerClients) {
-                client.Login -= new PRoConLayerClient.LayerClientHandler(client_LayerClientLogin);
-                client.Logout -= new PRoConLayerClient.LayerClientHandler(client_LayerClientLogout);
+            foreach (ILayerClient client in new List<ILayerClient>(ProconClient.Layer.Clients.Values)) {
+                client.Login -= Layer_LayerClientLogin;
+                client.Logout -= Layer_LayerClientLogout;
             }
-            ProconClient.Layer.ClientConnected -= new PRoConLayer.LayerAccountHandler(Layer_ClientConnected);
+            ProconClient.Layer.ClientConnected -= Layer_ClientConnected;
 
             #region BF4
 
@@ -1129,6 +1148,7 @@ namespace PRoCon.Core.Plugin {
 
             ProconClient.Game.PlayerJoin += new FrostbiteClient.PlayerEventHandler(m_prcClient_PlayerJoin);
             ProconClient.Game.PlayerLeft += new FrostbiteClient.PlayerLeaveHandler(m_prcClient_PlayerLeft);
+            ProconClient.Game.PlayerDisconnected += new FrostbiteClient.PlayerDisconnectedHandler(m_prcClient_PlayerDisconnected);
             ProconClient.Game.PlayerAuthenticated += new FrostbiteClient.PlayerAuthenticatedHandler(m_prcClient_PlayerAuthenticated);
             ProconClient.Game.PlayerKicked += new FrostbiteClient.PlayerKickedHandler(m_prcClient_PlayerKicked);
             ProconClient.Game.PlayerChangedTeam += new FrostbiteClient.PlayerTeamChangeHandler(m_prcClient_PlayerChangedTeam);
@@ -1326,11 +1346,11 @@ namespace PRoCon.Core.Plugin {
 
             #region Layer Accounts
 
-            foreach (PRoConLayerClient client in ProconClient.Layer.LayerClients) {
-                client.Login += new PRoConLayerClient.LayerClientHandler(client_LayerClientLogin);
-                client.Logout += new PRoConLayerClient.LayerClientHandler(client_LayerClientLogout);
+            foreach (ILayerClient client in new List<ILayerClient>(ProconClient.Layer.Clients.Values)) {
+                client.Login += Layer_LayerClientLogin;
+                client.Logout += Layer_LayerClientLogout;
             }
-            ProconClient.Layer.ClientConnected += new PRoConLayer.LayerAccountHandler(Layer_ClientConnected);
+            ProconClient.Layer.ClientConnected += Layer_ClientConnected;
 
             #endregion
 
@@ -1453,16 +1473,16 @@ namespace PRoCon.Core.Plugin {
 
         #region Layer Accounts
 
-        private void Layer_ClientConnected(PRoConLayerClient client) {
-            client.Login += new PRoConLayerClient.LayerClientHandler(client_LayerClientLogin);
-            client.Logout += new PRoConLayerClient.LayerClientHandler(client_LayerClientLogout);
+        private void Layer_ClientConnected(ILayerClient client) {
+            client.Login += Layer_LayerClientLogin;
+            client.Logout += Layer_LayerClientLogout;
         }
 
-        private void client_LayerClientLogout(PRoConLayerClient sender) {
+        private void Layer_LayerClientLogout(ILayerClient sender) {
             InvokeOnAllEnabled("OnAccountLogout", sender.Username, sender.IPPort, sender.Privileges);
         }
 
-        private void client_LayerClientLogin(PRoConLayerClient sender) {
+        private void Layer_LayerClientLogin(ILayerClient sender) {
             InvokeOnAllEnabled("OnAccountLogin", sender.Username, sender.IPPort, sender.Privileges);
         }
 
@@ -1535,6 +1555,10 @@ namespace PRoCon.Core.Plugin {
 
             // OBSOLETE
             //this.InvokeOnAllEnabled("OnPlayerLeft", playerName);
+        }
+
+        private void m_prcClient_PlayerDisconnected(FrostbiteClient sender, string playerName, string reason) {
+            InvokeOnAllEnabled("OnPlayerDisconnected", playerName, reason);
         }
 
         private void m_prcClient_PlayerAuthenticated(FrostbiteClient sender, string playerName, string playerGuid) {

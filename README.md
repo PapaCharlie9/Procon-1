@@ -1,5 +1,4 @@
 # Procon 1 #
-----------
 
 Procon 1 is developed by [Myrcon Ptd. Ltd.](https://myrcon.com "Official homepage of Myrcon Ptd. Ltd.").
 
@@ -22,30 +21,21 @@ Please refer to the [issues section](https://github.com/Myrcon/Procon-1/issues?l
 ## Changelog ##
 To check out older changelogs, please refer to our [full changelogs list](https://forum.myrcon.com/showthread.php?240-Full-Change-Log "Full changelog of Procon 1") on the Myrcon Community forums.
 
-### 1.4.1.2 to 1.4.1.3 ###
+### 1.4.1.6 to 1.4.2.0 ###
 #### Battlefield 4 ####
-- Added re-fetching of all server-variables if "vars.preset" is triggered with the "override" setting
-- Added missing settings for "vars.roundTimeLimit" and "vars.teamKillKickForBan"
-- Updated missing weapon definitions and added *China Rising* maps to maplist
-- Added DamageTypes for DMRs and Carbines
-- Changed "Disable idle kick" to send "vars.idleTimeout 86400" instead of "vars.idleTimeout 0"
-
-#### UI ####
-- Adapted limit for "vars.idleTimeout" setting to allow new maximum value
-- Fixed default URL for bf4stats.com
-- Removed the "test connection" link when starting a Procon Layer since it hasn't been functional in ages
-- Fixed "Unlock mode" setting not working properly
+- Fixed problem with team/squad mapping on BF4 maps (resulting in wrong moves/kicks etc.)
+- Added map definitions for *Second Assault* DLC
+- Additional changes to definitions for BF4
 
 #### Core ####
-- Added check to shut down existing client-connection to a Procon Layer if another connection from the same IP/port is being opened
-- Improved linux compatibility a bit and removed a compiler warning
-- Slightly modified account permissions to allow users with "Use map functions" permissions to select/run maps, but not modify the maplist
-- Changed encoding of some definition files from UTF-16LE to UTF-8
-- Added support for different encodings for localisation files
-- Updated GeoIP database used for displaying a user's country
+- Improved event handling in Procon, allowing for better performance and debugging
+- General (crazy) improvements by the almighty phogue (see [here](https://github.com/Myrcon/Procon-1/issues/92))
+
+#### UI ####
+- Fixed "Move to" menu in player list showing entries multiple times for BF4
 
 #### Plugins ####
-- Updated default plugins to use the latest plugin API
+- Slight startup improvement for the ingame admin plugin
 
 
 ## Credits & contributions ##
