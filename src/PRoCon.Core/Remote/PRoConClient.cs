@@ -81,6 +81,8 @@ namespace PRoCon.Core.Remote {
         /// </summary>
         public TimeSpan PluginMaxRuntimeSpan = new TimeSpan(0, 0, 59);
 
+        private bool PlayTimesSynced = false;
+
         #region Event handlers
 
         public delegate void AuthenticationFailureHandler(PRoConClient sender, string strError);
@@ -675,16 +677,27 @@ namespace PRoCon.Core.Remote {
                         ExecuteConnectionConfig(FileHostNamePort + ".cfg", 0, null, true);
                     }
 
-                    try {
-                        if (File.Exists(oldConfigFilePath) == true) {
-                            File.Delete(oldConfigFilePath);
+                    IsLoadingSavingConnectionConfig = false;
+                    SaveConnectionConfig();
+
+                    try
+                    {
+                        if (Directory.Exists(configDirectoryPath) == true && File.Exists(Path.Combine(configDirectoryPath, string.Format("{0}.cfg", FileHostNamePort))) == true)
+                        {
+                            try
+                            {
+                                if (File.Exists(oldConfigFilePath) == true) {
+                                    File.Delete(oldConfigFilePath);
+                                }
+                            }
+                            catch (Exception e) {
+                                FrostbiteConnection.LogError("RemoveOldConfig", String.Empty, e);
+                            }
                         }
                     }
                     catch (Exception e) {
-                        FrostbiteConnection.LogError("RemoveOldConfig", String.Empty, e);
+                        FrostbiteConnection.LogError("MigrateConfig", "Error writing new config structure during migration", e);
                     }
-
-                    IsLoadingSavingConnectionConfig = false;
                 }
 
             }
@@ -715,6 +728,10 @@ namespace PRoCon.Core.Remote {
                         }
                         else if (String.Compare(packetBeforeDispatch.Words[1], "BF3", StringComparison.OrdinalIgnoreCase) == 0) {
                             Game = new BF3Client(sender);
+                            _connection = null;
+                        }
+                        else if (String.Compare(packetBeforeDispatch.Words[1], "BFHL", StringComparison.OrdinalIgnoreCase) == 0) {
+                            Game = new BFHLClient(sender);
                             _connection = null;
                         }
                         else if (String.Compare(packetBeforeDispatch.Words[1], "BF4", StringComparison.OrdinalIgnoreCase) == 0) {
@@ -1397,6 +1414,28 @@ namespace PRoCon.Core.Remote {
 
                         blCancelPacket = true;
                     }
+
+                        // syncPlayTimes coming in
+                    else if (cpBeforePacketDispatch.Words.Count >= 3 && String.Compare(cpRequestPacket.Words[0], "procon.player.syncPlayTimes", true) == 0) {
+                        int iJoinTime = 0;
+                        var vSoldier = new CPlayerInfo();
+                        var oPlayer = new CPlayerInfo();
+
+                        for (int i = 1; i < cpBeforePacketDispatch.Words.Count; i += 2) {
+                            vSoldier.SoldierName = cpBeforePacketDispatch.Words[i];
+                            if (int.TryParse(cpBeforePacketDispatch.Words[i + 1], out iJoinTime) == true) {
+                                vSoldier.JoinTime = iJoinTime;
+                            }
+                            if (PlayerList.Contains(vSoldier.SoldierName) == true) {
+                                oPlayer = PlayerList[vSoldier.SoldierName];
+                                oPlayer.JoinTime = iJoinTime;
+
+                                PlayerList[PlayerList.IndexOf(PlayerList[vSoldier.SoldierName])] = oPlayer;
+                            }
+                        } 
+                        blCancelPacket = false;
+                    }
+
                     else if (cpRequestPacket.Words.Count >= 1 && String.Compare(cpRequestPacket.Words[0], "procon.battlemap.listZones", true) == 0 && cpBeforePacketDispatch.Words.Count >= 2 && String.Compare(cpBeforePacketDispatch.Words[0], "OK", true) == 0) {
                         var zones = new List<MapZoneDrawing>();
 
@@ -1656,7 +1695,6 @@ namespace PRoCon.Core.Remote {
                             }
                         }
                     }
-
                     if (blCancelUpdateEvent == false) {
                         string strProconEventsUid = String.Empty;
 
@@ -2591,7 +2629,7 @@ namespace PRoCon.Core.Remote {
         }
 
         private void PRoConClient_ReservedSlotsList(FrostbiteClient sender, List<string> soldierNames) {
-            if (sender is BF4Client || sender is BF3Client || sender is MOHWClient) {
+            if (sender is BFHLClient || sender is BF4Client || sender is BF3Client || sender is MOHWClient) {
                 ReservedSlotList.Clear();
             }
 
@@ -2623,7 +2661,7 @@ namespace PRoCon.Core.Remote {
         }
 
         private void PRoConClient_SpectatorListList(FrostbiteClient sender, List<string> soldierNames) {
-            if (sender is BF4Client) {
+            if (sender is BFHLClient || sender is BF4Client) {
                 SpectatorList.Clear();
             }
 
@@ -2798,9 +2836,18 @@ namespace PRoCon.Core.Remote {
                 // Add or update players.
                 foreach (CPlayerInfo cpiPlayer in lstPlayers) {
                     if (PlayerList.Contains(cpiPlayer.SoldierName) == true) {
+                        CPlayerInfo storedPlayer = PlayerList[PlayerList.IndexOf(PlayerList[cpiPlayer.SoldierName])];
+                        cpiPlayer.JoinTime = CurrentServerInfo.ServerUptime;
+                        if (storedPlayer.JoinTime == 0) { storedPlayer.JoinTime = CurrentServerInfo.ServerUptime; }
+                        if (storedPlayer.JoinTime <= CurrentServerInfo.ServerUptime) {
+                            cpiPlayer.SessionTime = CurrentServerInfo.ServerUptime - storedPlayer.JoinTime;
+                            cpiPlayer.JoinTime = storedPlayer.JoinTime;
+                        }
+                        
                         PlayerList[PlayerList.IndexOf(PlayerList[cpiPlayer.SoldierName])] = cpiPlayer;
                     }
                     else {
+                        cpiPlayer.JoinTime = CurrentServerInfo.ServerUptime;
                         PlayerList.Add(cpiPlayer);
                     }
                 }
@@ -2812,6 +2859,13 @@ namespace PRoCon.Core.Remote {
                         // They have left the server, remove them from the master stored list.
                         PlayerList.Remove(storedPlayer.SoldierName);
                     }
+                }
+
+                if (this.IsPRoConConnection == true && this.PlayTimesSynced == false) {
+                    SendRequest(new List<string>() {
+                        "procon.player.syncPlayTimes"
+                    });
+                    this.PlayTimesSynced = true;
                 }
             }
         }
@@ -2846,7 +2900,7 @@ namespace PRoCon.Core.Remote {
 
         protected void OnPlayerLimit(FrostbiteClient sender, int iPlayerLimit) {
             // Quick 'hack' because BF3 does not have these and it's generating confusion on the forums.
-            if (!(Game is BF4Client) && !(Game is BF3Client) && !(Game is MOHWClient)) {
+            if (!(Game is BFHLClient) && !(Game is BF4Client) && !(Game is BF3Client) && !(Game is MOHWClient)) {
                 SendRequest(new List<string>() {
                     "vars.currentPlayerLimit"
                 });

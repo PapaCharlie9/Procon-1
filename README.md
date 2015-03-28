@@ -1,9 +1,8 @@
 # Procon 1 #
-
-Procon 1 is developed by [Myrcon Ptd. Ltd.](https://myrcon.com "Official homepage of Myrcon Ptd. Ltd.").
+Procon 1 is developed by [Myrcon](https://myrcon.com "Official homepage of Myrcon").
 
 ## About Procon ##
-Procon is a free remote control (RCON) tool for gameservers, currently supporting Battlefield: Bad Company 2, Battlefield 3, Medal of Honor: Warfighter and Battlefield 4. It is developed by [Myrcon Ptd. Ltd.](https://myrcon.com "Official homepage of Myrcon Ptd. Ltd.") and also available as open source software on [GitHub](https://github.com/Myrcon/Procon-1 "Procon 1 on GitHub").
+Procon is a free remote control (RCON) tool for gameservers, currently supporting Battlefield: Bad Company 2, Battlefield 3, Medal of Honor: Warfighter, Battlefield 4 and Battlefield Hardline. It is developed by [Myrcon](https://myrcon.com "Official homepage of Myrcon") and also available as open source software on [GitHub](https://github.com/Myrcon/Procon-1 "Procon 1 on GitHub").
 
 In addition to providing basic features to control your gameserver, users can extend Procon's functionality using plugins, which can control Procon's behavior and add additional possibilities for gameserver admins. Furthermore, Procon provides a layer system, which allows running plugins and managing admin accounts in a central location instead of distributing it to every admin connected to the gameserver.
 
@@ -21,32 +20,26 @@ Please refer to the [issues section](https://github.com/Myrcon/Procon-1/issues?l
 ## Changelog ##
 To check out older changelogs, please refer to our [full changelogs list](https://forum.myrcon.com/showthread.php?240-Full-Change-Log "Full changelog of Procon 1") on the Myrcon Community forums.
 
-### 1.4.2.0 to 1.4.2.1 ###
+### 1.4.2.4 to 1.5.1.1 ###
 #### Battlefield 4 ####
-- Added parsing of R27's *player.onDisconnect* event
-- Added weapon definitions and localisation for vehicle RCON codes
-- Added new weapon definitions from *Naval Strike* DLC
-- Fixed errors in categorisation of weapons
+- Updates and changes to BF4.def
+
+#### Battlefield Hardline ####
+- first compatible release
+- Updates and changes to BFHL.def / au.loc / de.loc
 
 #### Core ####
-- Fixed *vars.teamFactionOverride* not being recognised by Procon layers
-- Plugin configs are now split into different files, preventing all information from being lost if once configuration fails to load/save
-- Fixed crash caused by invalid parsing of decimal numbers
-- Fixed crash caused by failing to load localisation properly
-- Fixed error causing a connection to get reconnected after pressing "disconnect"
+- Added BFHL compatibility
 
 #### UI ####
-- Added *OnPlayerDisconnected* messages to chat tab with checkbox to disable them
-- Added check for current round count not being able to go above the maximum round count
+- Added BFHL compatibility
 
-#### Plugins ####
-- Added option to enable compilation of plugins with debug information
-- Added plugin API for *OnPlayerDisconnected* event
-- Fixed InGameAdmin (f)move without destination on other games than BFBC2
+#### Default plugins ####
+- BFHL compatibility
 
 
 ## Credits & contributions ##
-Procon and the Procon layer are developed by [Myrcon Ptd. Ltd.](https://myrcon.com "Official homepage of Myrcon Ptd. Ltd.").
+Procon and the Procon layer are developed by [Myrcon](https://myrcon.com "Official homepage of Myrcon").
 
 The Battlefield franchise is a product of [DICE](http://dice.se "Digital Illusions Creative Entertainment AB").
 

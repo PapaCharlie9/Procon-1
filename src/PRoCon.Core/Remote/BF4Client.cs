@@ -164,6 +164,8 @@ namespace PRoCon.Core.Remote {
 
             ResponseDelegates.Add("vars.teamFactionOverride", DispatchVarsTeamFactionOverrideResponse);
 
+            ResponseDelegates.Add("vars.mpExperience", DispatchVarMpExperienceResponse);
+
             #endregion
 
             #region player.* / squad.* commands
@@ -264,6 +266,7 @@ namespace PRoCon.Core.Remote {
             SendGetVarsTeamFactionOverridePacket();
 
             SendGetVarsPresetPacket();
+            SendGetVarsMpExperiencePacket();
         }
 
         #region Overridden Events
@@ -279,6 +282,8 @@ namespace PRoCon.Core.Remote {
         public override event PlayerKilledHandler PlayerKilled;
 
         public override event PlayerSpawnedHandler PlayerSpawned;
+
+        public override event LevelLoadedHandler LevelLoaded;
 
         #region Maplist
 
@@ -338,6 +343,7 @@ namespace PRoCon.Core.Remote {
 
         public override event UnlockModeHandler UnlockMode;
         public override event BF4presetHandler BF4preset;
+        public override event MpExperienceHandler MpExperience;
         public override event GunMasterWeaponsPresetHandler GunMasterWeaponsPreset;
 
         public override event LimitHandler SoldierHealth;
@@ -699,6 +705,12 @@ namespace PRoCon.Core.Remote {
             }
         }
 
+        public virtual void SendGetVarsMpExperiencePacket() {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.mpExperience");
+            }
+        }
+
         #endregion
 
         #region Overridden Response Handlers
@@ -799,7 +811,20 @@ namespace PRoCon.Core.Remote {
             }
             //}
         }
+        
+        protected override void DispatchServerOnLevelLoadedRequest(FrostbiteConnection sender, Packet cpRequestPacket) {
+            if (cpRequestPacket.Words.Count >= 5) {
+                if (LevelLoaded != null) {
+                    int iRoundsPlayed = 0, iRoundsTotal = 0;
 
+                    if (int.TryParse(cpRequestPacket.Words[3], out iRoundsPlayed) == true && int.TryParse(cpRequestPacket.Words[4], out iRoundsTotal) == true) {
+                        this.LevelLoaded(this, cpRequestPacket.Words[1], cpRequestPacket.Words[2], iRoundsPlayed, iRoundsTotal);
+                        SendGetVarsTeamFactionOverridePacket();
+                    }
+                }
+            }
+        }
+        
         #region Map Functions
 
         protected override void DispatchAdminCurrentLevelResponse(FrostbiteConnection sender, Packet cpRecievedPacket, Packet cpRequestPacket) {
@@ -1535,6 +1560,20 @@ namespace PRoCon.Core.Remote {
                     }
                     else if (cpRequestPacket.Words.Count == 3) {
                         this.TeamFactionOverride(this, Convert.ToInt32(cpRequestPacket.Words[1]), Convert.ToInt32(cpRequestPacket.Words[2]));
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        #region mpExperience
+
+        protected virtual void DispatchVarMpExperienceResponse(FrostbiteConnection sender, Packet cpRecievedPacket, Packet cpRequestPacket) {
+            if (cpRequestPacket.Words.Count >= 1) {
+                if (this.MpExperience != null) {
+                    if (cpRecievedPacket.Words.Count == 2) {
+                        this.MpExperience(this, cpRecievedPacket.Words[1]);
                     }
                 }
             }

@@ -911,6 +911,7 @@ namespace PRoCon.Core.Plugin {
             ProconClient.Game.GlobalChat -= new FrostbiteClient.GlobalChatHandler(m_prcClient_GlobalChat);
             ProconClient.Game.TeamChat -= new FrostbiteClient.TeamChatHandler(m_prcClient_TeamChat);
             ProconClient.Game.SquadChat -= new FrostbiteClient.SquadChatHandler(m_prcClient_SquadChat);
+            ProconClient.Game.PlayerChat -= new FrostbiteClient.PlayerChatHandler(m_prcClient_PlayerChat);
 
             ProconClient.Game.ResponseError -= new FrostbiteClient.ResponseErrorHandler(m_prcClient_ResponseError);
             ProconClient.Game.Version -= new FrostbiteClient.VersionHandler(m_prcClient_Version);
@@ -1137,6 +1138,12 @@ namespace PRoCon.Core.Plugin {
             #endregion
 
             #endregion
+
+            #region Battlefield: Hardline
+
+            ProconClient.Game.RoundStartReadyPlayersNeeded -= Game_RoundStartReadyPlayersNeeded;
+
+            #endregion
         }
 
         private void AssignEventHandler() {
@@ -1158,7 +1165,8 @@ namespace PRoCon.Core.Plugin {
             ProconClient.Game.GlobalChat += new FrostbiteClient.GlobalChatHandler(m_prcClient_GlobalChat);
             ProconClient.Game.TeamChat += new FrostbiteClient.TeamChatHandler(m_prcClient_TeamChat);
             ProconClient.Game.SquadChat += new FrostbiteClient.SquadChatHandler(m_prcClient_SquadChat);
-
+            ProconClient.Game.PlayerChat += new FrostbiteClient.PlayerChatHandler(m_prcClient_PlayerChat);
+            
             ProconClient.Game.ResponseError += new FrostbiteClient.ResponseErrorHandler(m_prcClient_ResponseError);
             ProconClient.Game.Version += new FrostbiteClient.VersionHandler(m_prcClient_Version);
             ProconClient.Game.Help += new FrostbiteClient.HelpHandler(m_prcClient_Help);
@@ -1384,6 +1392,12 @@ namespace PRoCon.Core.Plugin {
             ProconClient.Game.TeamFactionOverride += new FrostbiteClient.TeamFactionOverrideHandler(Game_TeamFactionOverride);
 
             #endregion
+
+            #region Battlefield: Hardline
+
+            ProconClient.Game.RoundStartReadyPlayersNeeded += Game_RoundStartReadyPlayersNeeded;
+
+            #endregion
         }
 
         #endregion
@@ -1469,6 +1483,14 @@ namespace PRoCon.Core.Plugin {
         }
 
 
+        #endregion
+
+        #region Battlefield: Hardline
+        
+        void Game_RoundStartReadyPlayersNeeded(FrostbiteClient sender, int limit) {
+            InvokeOnAllEnabled("OnRoundStartReadyPlayersNeeded", limit);
+        }
+        
         #endregion
 
         #region Layer Accounts
@@ -1725,6 +1747,19 @@ namespace PRoCon.Core.Plugin {
 
             if (String.Compare(playerName, "server", StringComparison.OrdinalIgnoreCase) != 0 && CheckInGameCommands(playerName, message, out mtcCommand, out capCommand) == true) {
                 DispatchMatchedCommand(playerName, message, mtcCommand, capCommand, new CPlayerSubset(CPlayerSubset.PlayerSubsetType.Squad, teamId, squadId));
+                //this.InvokeOnEnabled(mtcCommand.RegisteredClassname, "OnMatchRegisteredCommand", playerName, message, mtcCommand, capCommand, new CPlayerSubset(CPlayerSubset.PlayerSubsetType.Squad, teamId, squadId));
+            }
+        }
+
+        private void m_prcClient_PlayerChat(FrostbiteClient sender, string playerName, string message, string targetPlayer) {
+            InvokeOnAllEnabled("OnPlayerChat", playerName, message, targetPlayer);
+
+            CapturedCommand capCommand = null;
+            MatchCommand mtcCommand = null;
+
+            if (String.Compare(playerName, "server", StringComparison.OrdinalIgnoreCase) != 0 && CheckInGameCommands(playerName, message, out mtcCommand, out capCommand) == true)
+            {
+                DispatchMatchedCommand(playerName, message, mtcCommand, capCommand, new CPlayerSubset(CPlayerSubset.PlayerSubsetType.Player, targetPlayer));
                 //this.InvokeOnEnabled(mtcCommand.RegisteredClassname, "OnMatchRegisteredCommand", playerName, message, mtcCommand, capCommand, new CPlayerSubset(CPlayerSubset.PlayerSubsetType.Squad, teamId, squadId));
             }
         }

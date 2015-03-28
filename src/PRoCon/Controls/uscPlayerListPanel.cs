@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 using System.Net;
+using System.Xml;
 using PRoCon.Controls.Containers;
 using PRoCon.Controls.ControlsEx;
 using PRoCon.Core;
@@ -93,6 +95,21 @@ namespace PRoCon.Controls {
         /// If the team placeholders have been created/drawn
         /// </summary>
         protected bool PlaceHoldersDrawn { get; set; }
+        
+        /// <summary>
+        /// A list of procon developer uids for highlighting in the player panel
+        /// </summary>
+        protected List<String> DeveloperUids { get; private set; }
+
+        /// <summary>
+        /// A list of procon staff uids for highlighting in the player panel
+        /// </summary>
+        protected List<String> StaffUids { get; private set; }
+
+        /// <summary>
+        /// A list of procon plugin developer uids for highlighting in the player panel
+        /// </summary>
+        protected List<String> PluginDeveloperUids { get; private set; }
 
         public uscPlayerListPanel() {
             InitializeComponent();
@@ -109,6 +126,10 @@ namespace PRoCon.Controls {
             this.spltListAdditionalInfo.Panel2Collapsed = true;
             this.spltTwoSplit.Panel2Collapsed = true;
             this.spltFourSplit.Panel2Collapsed = true;
+
+            this.DeveloperUids = new List<string>();
+            this.StaffUids = new List<string>();
+            this.PluginDeveloperUids = new List<string>();
         }
 
         protected void SetSplitterDistances() {
@@ -184,6 +205,8 @@ namespace PRoCon.Controls {
             this.btnSplitTeams.ImageKey = @"application_tile_horizontal.png";
 
             this.cboEndRound.SelectedIndex = 0;
+
+            this.updateDeveloperUids();
         }
 
         // If we disconnect clear the player list so it's fresh on reconnection.
@@ -339,8 +362,9 @@ namespace PRoCon.Controls {
             this.colKdr1.Text = this.colKdr2.Text = this.colKdr3.Text = this.colKdr4.Text = this.Language.GetLocalized("uscPlayerListPanel.lsvPlayers.colKdr", null);
             this.colScore1.Text = this.colScore2.Text = this.colScore3.Text = this.colScore4.Text = this.Language.GetLocalized("uscPlayerListPanel.lsvPlayers.colScore", null);
             this.colPing1.Text = this.colPing2.Text = this.colPing3.Text = this.colPing4.Text = this.Language.GetLocalized("uscPlayerListPanel.lsvPlayers.colPing", null);
-            this.colRank1.Tag = this.colRank2.Text = this.colRank3.Text = this.colRank4.Text = this.Language.GetDefaultLocalized("Rank", "uscPlayerListPanel.lsvPlayers.colRank", null);
-            this.colType1.Tag = this.colType2.Text = this.colType3.Text = this.colType4.Text = this.Language.GetDefaultLocalized("Type", "uscPlayerListPanel.lsvPlayers.colType", null);
+            this.colRank1.Text = this.colRank2.Text = this.colRank3.Text = this.colRank4.Text = this.Language.GetDefaultLocalized("Rank", "uscPlayerListPanel.lsvPlayers.colRank", null);
+            this.colTime1.Text = this.colTime2.Text = this.colTime3.Text = this.colTime4.Text = this.Language.GetDefaultLocalized("PlayTime", "uscPlayerListPanel.lsvPlayers.colTime", null);
+            this.colType1.Text = this.colType2.Text = this.colType3.Text = this.colType4.Text = this.Language.GetDefaultLocalized("Type", "uscPlayerListPanel.lsvPlayers.colType", null);
 
             this.btnPlayerListSelectedCheese.Text = this.Language.GetLocalized("uscPlayerListPanel.btnPlayerListSelectedCheese", null);
 
@@ -465,6 +489,12 @@ namespace PRoCon.Controls {
             };
             newListPlayer.SubItems.Add(rank);
 
+            ListViewItem.ListViewSubItem time = new ListViewItem.ListViewSubItem {
+                Name = @"time",
+                Text = player.SessionTime > 60 ? String.Format("{0:0}", player.SessionTime / 60) : "0"
+            };
+            newListPlayer.SubItems.Add(time);
+
             ListViewItem.ListViewSubItem type = new ListViewItem.ListViewSubItem {
                 Name = @"type"
             };
@@ -553,6 +583,7 @@ namespace PRoCon.Controls {
                     tag.Player.Score = 0;
                     tag.Player.Ping = 0;
                     tag.Player.Rank = 0;
+                    tag.Player.SessionTime = 0;
                     tag.Player.Type = 0;
                     tag.Player.SquadID = 0;
                     tag.Player.Kdr = 0.0F;
@@ -564,6 +595,7 @@ namespace PRoCon.Controls {
                 this.Players[String.Format("procon.playerlist.totals{0}", teamId)].SubItems["score"].Text = @"0";
                 this.Players[String.Format("procon.playerlist.totals{0}", teamId)].SubItems["ping"].Text = String.Empty;
                 this.Players[String.Format("procon.playerlist.totals{0}", teamId)].SubItems["rank"].Text = String.Empty;
+                this.Players[String.Format("procon.playerlist.totals{0}", teamId)].SubItems["time"].Text = String.Empty;
                 this.Players[String.Format("procon.playerlist.totals{0}", teamId)].SubItems["type"].Text = String.Empty;
                 this.Players[String.Format("procon.playerlist.totals{0}", teamId)].SubItems["kdr"].Text = @"0.00";
 
@@ -573,6 +605,7 @@ namespace PRoCon.Controls {
                 this.Players[String.Format("procon.playerlist.averages{0}", teamId)].SubItems["score"].Text = @"0.00";
                 this.Players[String.Format("procon.playerlist.averages{0}", teamId)].SubItems["ping"].Text = @"0.00";
                 this.Players[String.Format("procon.playerlist.averages{0}", teamId)].SubItems["rank"].Text = @"-";
+                this.Players[String.Format("procon.playerlist.averages{0}", teamId)].SubItems["time"].Text = @"-";
                 this.Players[String.Format("procon.playerlist.averages{0}", teamId)].SubItems["type"].Text = @"-";
                 this.Players[String.Format("procon.playerlist.averages{0}", teamId)].SubItems["kdr"].Text = @"0.00";
             }
@@ -644,7 +677,8 @@ namespace PRoCon.Controls {
                 proconPlayerListAveragesListItem.SubItems["score"].Text = String.Format("{0:0.00}", (float)proconPlayerListTotalsObject.Player.Score / (float)proconPlayerListTotalsObject.Player.SquadID);
                 proconPlayerListAveragesListItem.SubItems["ping"].Text = String.Format("{0:0}", (int)proconPlayerListTotalsObject.Player.Ping / (float)proconPlayerListTotalsObject.Player.SquadID);
                 proconPlayerListAveragesListItem.SubItems["rank"].Text = String.Format("{0:0}", (int)proconPlayerListTotalsObject.Player.Rank / (float)proconPlayerListTotalsObject.Player.SquadID);
-                proconPlayerListAveragesListItem.SubItems["type"].Text = String.Format("{0:0}", (int)proconPlayerListTotalsObject.Player.Type / (float)proconPlayerListTotalsObject.Player.SquadID);
+                proconPlayerListAveragesListItem.SubItems["time"].Text = String.Empty;
+                proconPlayerListAveragesListItem.SubItems["type"].Text = String.Empty;
                 proconPlayerListAveragesListItem.SubItems["kdr"].Text = String.Format("{0:0.00}", proconPlayerListTotalsObject.Player.Kdr / (float)proconPlayerListTotalsObject.Player.SquadID);
 
                 int mostUsedKitCount = 0;
@@ -987,6 +1021,10 @@ namespace PRoCon.Controls {
                             if (String.Compare(playerListItem.SubItems["rank"].Text, cpiPlayer.Rank.ToString()) != 0) {
                                 playerListItem.SubItems["rank"].Text = cpiPlayer.Rank.ToString();
                             }
+                            
+                            string strTime = cpiPlayer.SessionTime > 60 ? String.Format("{0:0}", cpiPlayer.SessionTime / 60) : "0";
+                            playerListItem.SubItems["time"].Text = strTime;
+                            
                             if (String.Compare(playerListItem.SubItems["type"].Text, cpiPlayer.Type.ToString()) != 0) {
                                 if (cpiPlayer.Type == 0) {
                                     //playerListItem.SubItems["type"].Text = this.m_clocLanguage.GetDefaultLocalized("Player", "uscPlayerListPanel.lsvPlayers.Type.Player", null);
@@ -1000,6 +1038,21 @@ namespace PRoCon.Controls {
                                 }
                                 else if (cpiPlayer.Type == 3) {
                                     playerListItem.SubItems["type"].Text = this.Language.GetDefaultLocalized("Commander (Tablet)", "uscPlayerListPanel.lsvPlayers.Type.CommanderTablet", null);
+                                }
+                            }
+
+                            if (String.IsNullOrEmpty(cpiPlayer.GUID) == false) {
+                                if (this.DeveloperUids.Contains(cpiPlayer.GUID.ToLowerInvariant())) {
+                                    playerListItem.ForeColor = Color.CornflowerBlue;
+                                    playerListItem.SubItems["type"].Text = this.Language.GetDefaultLocalized("Procon Developer", "uscPlayerListPanel.lsvPlayers.Type.Developer", null);
+                                }
+                                else if (this.StaffUids.Contains(cpiPlayer.GUID.ToLowerInvariant())) {
+                                    playerListItem.ForeColor = Color.DeepSkyBlue;
+                                    playerListItem.SubItems["type"].Text = this.Language.GetDefaultLocalized("Myrcon Staff", "uscPlayerListPanel.lsvPlayers.Type.Staff", null);
+                                }
+                                else if (this.PluginDeveloperUids.Contains(cpiPlayer.GUID.ToLowerInvariant())) {
+                                    playerListItem.ForeColor = Color.LightSkyBlue;
+                                    playerListItem.SubItems["type"].Text = this.Language.GetDefaultLocalized("Plugin Developer", "uscPlayerListPanel.lsvPlayers.Type.PluginDeveloper", null);
                                 }
                             }
 
@@ -1869,7 +1922,7 @@ namespace PRoCon.Controls {
                     this.moveToSquadToolStripMenuItem.DropDownItems.Clear();
 
                     foreach (CTeamName team in this.Client.TeamNameList) {
-                        if (this.Client.GameType == "BFBC2")
+                        if (this.Client.GameType == "BFBC2" || this.Client.GameType == "MoH")
                         {
                             if (String.Compare(team.MapFilename, this.Client.CurrentServerInfo.Map, true) == 0 && team.TeamID != uscPlayerListPanel.NeutralTeam)
                             {
@@ -2205,7 +2258,7 @@ namespace PRoCon.Controls {
                     else if (this.Client.Game is BFBC2Client) {
                         this.Client.SendRequest(new List<string>() { "admin.endRound", this.cboEndRound.SelectedIndex.ToString(CultureInfo.InvariantCulture) });
                     }
-                    else if (this.Client.Game is BF3Client || this.Client.Game is BF4Client) {
+                    else if (this.Client.Game is BF3Client || this.Client.Game is BF4Client || this.Client.Game is BFHLClient) {
                         this.Client.SendRequest(new List<string>() { "mapList.endRound", this.cboEndRound.SelectedIndex.ToString(CultureInfo.InvariantCulture) });
                     }
                     else if (this.Client.Game is MOHWClient) {
@@ -2235,5 +2288,49 @@ namespace PRoCon.Controls {
         }
 
         #endregion
+
+        private void updateDeveloperUids() {
+            ThreadPool.QueueUserWorkItem(delegate {
+                try {
+                    XmlDocument document = new XmlDocument();
+                    document.Load("https://myrcon.com/procon/streams/developers/format/xml");
+
+                    foreach (XmlElement developer in document.GetElementsByTagName("developer")) {
+                        XmlNodeList developerUids = developer.GetElementsByTagName("ea_guid");
+
+                        if (developerUids.Count > 0) {
+                            XmlNode developerUid = developerUids.Item(0);
+
+                            XmlNodeList developerTypes = developer.GetElementsByTagName("type");
+                            if (developerTypes.Count > 0) {
+                                XmlNode developerType = developerTypes.Item(0);
+
+                                if (developerType != null && developerType.InnerText.Length > 0) {
+                                    switch (developerType.InnerText) {
+                                        case "developer":
+                                            if (developerUid != null && developerUid.InnerText.Length > 0 && this.DeveloperUids.Contains(developerUid.InnerText) == false) {
+                                                this.DeveloperUids.Add(developerUid.InnerText);
+                                            }
+                                            break;
+                                        case "staff":
+                                            if (developerUid != null && developerUid.InnerText.Length > 0 && this.StaffUids.Contains(developerUid.InnerText) == false) {
+                                                this.StaffUids.Add(developerUid.InnerText);
+                                            }
+                                            break;
+                                        case "plugindeveloper":
+                                            if (developerUid != null && developerUid.InnerText.Length > 0 && this.PluginDeveloperUids.Contains(developerUid.InnerText) == false) {
+                                                this.PluginDeveloperUids.Add(developerUid.InnerText);
+                                            }
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    
+                }});
+        }
     }
 }

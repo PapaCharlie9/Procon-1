@@ -1847,6 +1847,16 @@ namespace PRoCon.Core.Remote {
 
         #endregion
 
+        #region Battlefield: Hardline
+
+        public virtual void SendGetVarsRoundStartReadyPlayersNeeded() {
+            if (IsLoggedIn == true) {
+                BuildSendPacket("vars.roundStartReadyPlayersNeeded");
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #endregion
@@ -1982,6 +1992,8 @@ namespace PRoCon.Core.Remote {
 
         public delegate void PlayerLeaveHandler(FrostbiteClient sender, string playerName, CPlayerInfo cpiPlayer);
 
+        public delegate void PlayerChatHandler(FrostbiteClient sender, string playerName, string message, string targetPlayer);
+
         public delegate void PlayerDisconnectedHandler(FrostbiteClient sender, string playerName, string reason);
 
         public delegate void PlayerMovedByAdminHandler(FrostbiteClient sender, string soldierName, int destinationTeamId, int destinationSquadId, bool forceKilled);
@@ -2067,6 +2079,8 @@ namespace PRoCon.Core.Remote {
         public delegate void UnlockModeHandler(FrostbiteClient sender, string mode);
 
         public delegate void BF4presetHandler(FrostbiteClient sender, string mode, bool isLocked);
+
+        public delegate void MpExperienceHandler(FrostbiteClient sender, string mpExperience);
 
         public delegate void UpperLowerLimitHandler(FrostbiteClient sender, int upperLimit, int lowerLimit);
 
@@ -3427,8 +3441,13 @@ namespace PRoCon.Core.Remote {
                     }
                 }
                 else if (cpRequestPacket.Words.Count >= 5 && String.Compare(cpRequestPacket.Words[3], "team", StringComparison.OrdinalIgnoreCase) == 0 && int.TryParse(cpRequestPacket.Words[4], out iTeamID) == true) {
-                    if (TeamChat != null) {
+                    if (this.TeamChat != null) {
                         this.TeamChat(this, cpRequestPacket.Words[1], cpRequestPacket.Words[2], iTeamID);
+                    }
+                }
+                else if (cpRequestPacket.Words.Count >= 5 && String.Compare(cpRequestPacket.Words[3], "player", StringComparison.OrdinalIgnoreCase) == 0) {
+                    if (this.PlayerChat != null) {
+                        this.PlayerChat(this, cpRequestPacket.Words[1], cpRequestPacket.Words[2], cpRequestPacket.Words[4]);
                     }
                 }
                 else if (cpRequestPacket.Words.Count >= 6 && String.Compare(cpRequestPacket.Words[3], "squad", StringComparison.OrdinalIgnoreCase) == 0 && int.TryParse(cpRequestPacket.Words[4], out iTeamID) == true && int.TryParse(cpRequestPacket.Words[5], out iSquadID) == true) {
@@ -3608,6 +3627,7 @@ namespace PRoCon.Core.Remote {
         public virtual event GlobalChatHandler GlobalChat;
         public virtual event TeamChatHandler TeamChat;
         public virtual event SquadChatHandler SquadChat;
+        public virtual event PlayerChatHandler PlayerChat;
 
         #endregion
 
@@ -3868,6 +3888,8 @@ namespace PRoCon.Core.Remote {
         public virtual event LimitHandler RoundTimeLimit;
         public virtual event LimitHandler TicketBleedRate;
         public virtual event BF4presetHandler BF4preset;
+        public virtual event MpExperienceHandler MpExperience;
+        public virtual event LimitHandler RoundStartReadyPlayersNeeded;
 
         public virtual event TeamFactionOverrideHandler TeamFactionOverride;
 

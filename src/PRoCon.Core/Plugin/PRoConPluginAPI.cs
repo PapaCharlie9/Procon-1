@@ -106,6 +106,22 @@ namespace PRoCon.Core.Plugin {
                         this.FrostbitePlayerInfoList.Add(player.SoldierName, player);
                     }
                 }
+
+                foreach (var fpi_player in this.FrostbitePlayerInfoList.Keys) {
+                    bool blFoundPlayer = false;
+
+                    foreach (CPlayerInfo iPlayer in players) {
+                        if (String.Compare(iPlayer.SoldierName, this.FrostbitePlayerInfoList[fpi_player].SoldierName) == 0) {
+                            blFoundPlayer = true;
+                            break;
+                        }
+                    }
+
+                    if (blFoundPlayer == false) {
+                        this.FrostbitePlayerInfoList.Remove(fpi_player);
+                        this.PunkbusterPlayerInfoList.Remove(fpi_player);
+                    }
+                }
             }
         }
 
@@ -299,6 +315,12 @@ namespace PRoCon.Core.Plugin {
 
         #endregion
 
+        #region Battlefield: Hardline
+
+        public virtual void OnRoundStartReadyPlayersNeeded(int limit) { }
+
+        #endregion
+
         #endregion
 
         #region Team Kill
@@ -403,6 +425,7 @@ namespace PRoCon.Core.Plugin {
         public virtual void OnGlobalChat(string speaker, string message) { }
         public virtual void OnTeamChat(string speaker, string message, int teamId) { }
         public virtual void OnSquadChat(string speaker, string message, int teamId, int squadId) { }
+        public virtual void OnPlayerChat(string speaker, string message, string targetPlayer) { }
 
         #endregion
 

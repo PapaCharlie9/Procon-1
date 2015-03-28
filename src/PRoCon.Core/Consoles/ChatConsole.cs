@@ -339,11 +339,11 @@ namespace PRoCon.Core.Consoles {
                 commoroseMessage = true;
             }
             else if (System.String.Compare(rawChat[1], "ID_CHAT_REQUEST_MEDIC", System.StringComparison.OrdinalIgnoreCase) == 0) {
-                rawChat[1] = Client.Language.GetDefaultLocalized("ID_CHAT_REQUEST_ORDER", "uscChatPanel.ID_CHAT_REQUEST_ORDER");
+                rawChat[1] = Client.Language.GetDefaultLocalized("ID_CHAT_REQUEST_MEDIC", "uscChatPanel.ID_CHAT_REQUEST_MEDIC");
                 commoroseMessage = true;
             }
             else if (System.String.Compare(rawChat[1], "ID_CHAT_REQUEST_ORDER", System.StringComparison.OrdinalIgnoreCase) == 0) {
-                rawChat[1] = Client.Language.GetDefaultLocalized("ID_CHAT_REQUEST_MEDIC", "uscChatPanel.ID_CHAT_REQUEST_MEDIC");
+                rawChat[1] = Client.Language.GetDefaultLocalized("ID_CHAT_REQUEST_ORDER", "uscChatPanel.ID_CHAT_REQUEST_ORDER");
                 commoroseMessage = true;
             }
             else if (System.String.Compare(rawChat[1], "ID_CHAT_REQUEST_REPAIRS", System.StringComparison.OrdinalIgnoreCase) == 0) {
@@ -429,12 +429,20 @@ namespace PRoCon.Core.Consoles {
             }
         }
 
-        private void m_prcClient_PlayerLeft(FrostbiteClient sender, string playerName, CPlayerInfo cpiPlayer) {
-            if (LogJoinLeaving == true) {
-                if (cpiPlayer != null) {
+        private void m_prcClient_PlayerJoin(FrostbiteClient sender, string playerName)
+        {
+            if (LogJoinLeaving == true)
+            {
+                Write(DateTime.UtcNow.ToUniversalTime().AddHours(Client.Game.UtcOffset).ToLocalTime(), String.Format("^4{0}", Client.Language.GetLocalized("uscChatPanel.chkDisplayOnJoinLeaveEvents.Joined", playerName)));
+            }
+        }
+
+        private void m_prcClient_PlayerLeft(FrostbiteClient sender, string playerName, CPlayerInfo cpiPlayer)
+        {
+            if (LogJoinLeaving == true && LogPlayerDisconnected == false) {
+                if (cpiPlayer != null && cpiPlayer.ClanTag != null) {
                     Write(DateTime.UtcNow.ToUniversalTime().AddHours(Client.Game.UtcOffset).ToLocalTime(), String.Format("^1{0}", Client.Language.GetLocalized("uscChatPanel.chkDisplayOnJoinLeaveEvents.Left", string.Format("{0} {1}", cpiPlayer.ClanTag, cpiPlayer.SoldierName))));
-                }
-                else {
+                } else {
                     Write(DateTime.UtcNow.ToUniversalTime().AddHours(Client.Game.UtcOffset).ToLocalTime(), String.Format("^1{0}", Client.Language.GetLocalized("uscChatPanel.chkDisplayOnJoinLeaveEvents.Left", playerName)));
                 }
             }
@@ -446,23 +454,17 @@ namespace PRoCon.Core.Consoles {
             }
         }
 
-        private void m_prcClient_PlayerJoin(FrostbiteClient sender, string playerName) {
-            if (LogJoinLeaving == true) {
-                Write(DateTime.UtcNow.ToUniversalTime().AddHours(Client.Game.UtcOffset).ToLocalTime(), String.Format("^4{0}", Client.Language.GetLocalized("uscChatPanel.chkDisplayOnJoinLeaveEvents.Joined", playerName)));
-            }
-        }
-
         private void m_prcClient_PlayerKilled(PRoConClient sender, Kill kKillerVictimDetails) {
             if (LogKills == true) {
                 string strKillerName = kKillerVictimDetails.Killer.SoldierName, strVictimName = kKillerVictimDetails.Victim.SoldierName;
 
                 bool isTk = kKillerVictimDetails.Killer.TeamID == kKillerVictimDetails.Victim.TeamID && kKillerVictimDetails.Killer.SoldierName != kKillerVictimDetails.Victim.SoldierName;
 
-                if (Client.PlayerList.Contains(kKillerVictimDetails.Killer) == true) {
+                if (Client.PlayerList.Contains(kKillerVictimDetails.Killer) == true && Client.PlayerList[kKillerVictimDetails.Killer.SoldierName].ClanTag != null) {
                     strKillerName = String.Format("{0} {1}", Client.PlayerList[kKillerVictimDetails.Killer.SoldierName].ClanTag, kKillerVictimDetails.Killer.SoldierName);
                 }
 
-                if (Client.PlayerList.Contains(kKillerVictimDetails.Victim) == true) {
+                if (Client.PlayerList.Contains(kKillerVictimDetails.Victim) == true && Client.PlayerList[kKillerVictimDetails.Victim.SoldierName].ClanTag != null) {
                     strVictimName = String.Format("{0} {1}", Client.PlayerList[kKillerVictimDetails.Victim.SoldierName].ClanTag, kKillerVictimDetails.Victim.SoldierName);
                 }
 
